@@ -3,7 +3,9 @@ globals
   num-food
   num-agents
   bhebix-list
+  berry-list
   nearest-berry
+  nearest-agent
 ]
 
 breed [ food berries ]    ;; these are the resources the agents will consume
@@ -37,19 +39,56 @@ to setup
   ask agent [ set energy 100 ]
   ask agent [ set affection 100 ]
   
-  set bhebix-list [self] of agent
+ 
 end
 
 to go
-  foreach bhebix-list
-  [
-    ask ?[ set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself]] ;; set the value of nearest berry to the closest berry 
-    ask ? [if any? turtles in-radius 5  with [breed = food ][set heading towards nearest-berry]
-            else if not any? turtles in-radius 5 ] ;; if there are any berries in a radius of 5 set the heading of the current turtle towards the nearest berry
-    ask ? [fd 1] ;; move the current turtle forward 1
-  ]
-  tick
+   set bhebix-list [self] of agent
+   set berry-list [self] of food
+  search
+  eat
+ 
+   tick
 end
+
+to search
+   foreach bhebix-list
+  [
+    ask ? [if affection > 30 or energy < 30
+      [
+        ask ? [set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself]] ;; set the value of nearest berry to the closest berry 
+        ask ? [if any? turtles in-radius 10  with [breed = food ][face nearest-berry]]  ;; if there are any berries in a radius of 5 set the heading of the current turtle towards the nearest berry
+        ask ? [if not any? turtles in-radius 10 with [breed = food][ rt random 90 lt random 90]] ;; if no berries in radius 5 randomly change direction
+        ask ? [fd 1] ;; move the current turtle forward 1
+        
+      ]
+    ]
+    
+    ask ? [if affection < 30 and energy > 30
+      [
+        ask ? [set nearest-agent min-one-of (turtles with [breed = agent ] )[distance myself]] ;; set the value of nearest berry to the closest berry 
+        ask ? [if any? turtles in-radius 10  with [breed = agent ][face nearest-agent]]  ;; if there are any berries in a radius of 5 set the heading of the current turtle towards the nearest berry
+        ask ? [if not any? turtles in-radius 10 with [breed = agent][ rt random 90 lt random 90]] ;; if no berries in radius 5 randomly change direction
+        ask ? [fd 1] ;; move the current turtle forward 1     
+        
+      ]
+      
+      set energy(energy - 1)
+        ask ? [print energy]
+      set affection(affection - 1)
+        ask ? [print affection]
+    ]
+  ]
+end
+
+to eat
+  
+  foreach berry-list
+  [
+    ask ? [ if any? turtles-here with [breed = agent][die]]
+    
+  ]
+  end
 
 
 
