@@ -3,6 +3,7 @@ globals
   num-food
   num-agents
   bhebix-list
+  nearest-berry
 ]
 
 breed [ food berries ]    ;; these are the resources the agents will consume
@@ -10,7 +11,9 @@ breed [ agent bhebix ]    ;; these are the main agents
 
 agent-own
 [
- energy 
+ energy ;; attribute to hold the energy of each individual agent
+ affection ;; attribute to hold the affection level of each individual agent
+ 
 ]
 
 to setup
@@ -32,6 +35,7 @@ to setup
   
   ask agent [ set size 2 ]
   ask agent [ set energy 100 ]
+  ask agent [ set affection 100 ]
   
   set bhebix-list [self] of agent
 end
@@ -39,11 +43,13 @@ end
 to go
   foreach bhebix-list
   [
-    ask ? [fd 1]
+    ask ?[ set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself]] ;; set the value of nearest berry to the closest berry 
+    ask ? [if any? turtles in-radius 5  with [breed = food ][set heading towards nearest-berry]
+            else if not any? turtles in-radius 5 ] ;; if there are any berries in a radius of 5 set the heading of the current turtle towards the nearest berry
+    ask ? [fd 1] ;; move the current turtle forward 1
   ]
   tick
 end
-
 
 
 
