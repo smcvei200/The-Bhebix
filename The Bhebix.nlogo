@@ -56,7 +56,7 @@ end
 to search
    foreach bhebix-list
   [
-    ask ? [if affection > 30 or energy < 30
+    ask ? [if affection > 30 
               [
                  set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself] ;; set the value of nearest berry to the closest berry 
                  if any? turtles in-radius 10  with [breed = food ][face nearest-berry]  ;; if there are any berries in a radius of 10 set the heading of the current turtle towards the nearest berry
@@ -65,13 +65,15 @@ to search
               ]
           ]
     
-    ask ? [if affection < 30 and energy > 30
+    ask ? [if affection < 30 
               [
                  set nearest-agent min-one-of other agent [distance myself]
                  face nearest-agent
                  fd 1      
+                
               ]      
           ]
+    
       
      ask ? [
              set energy(energy - 1)
@@ -99,10 +101,10 @@ to interact
   foreach bhebix-list
   [
     ask ? [ if any? other turtles-here with [breed = agent][ set affection ( affection + 50 )]]
+    ask ? [print affection ]
   ]
 end
      
-
 
 
 
