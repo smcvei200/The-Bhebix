@@ -6,6 +6,7 @@ globals
   berry-list
   nearest-berry
   nearest-agent
+  cuddle-agent
 ]
 
 breed [ food berries ]    ;; these are the resources the agents will consume
@@ -23,7 +24,7 @@ to setup
   reset-ticks
   
   set num-food 20 ;; set the initial number of food items
-  set num-agents 10 ;; set the initial number of agents
+  set num-agents 5 ;; set the initial number of agents
   
   ask patches[ set pcolor green ]  ;; set background colour to green 
   
@@ -47,6 +48,7 @@ to go
    set berry-list [self] of food
   search
   eat
+  interact
  
    tick
 end
@@ -55,44 +57,51 @@ to search
    foreach bhebix-list
   [
     ask ? [if affection > 30 or energy < 30
-      [
-        ask ? [set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself]] ;; set the value of nearest berry to the closest berry 
-        ask ? [if any? turtles in-radius 10  with [breed = food ][face nearest-berry]]  ;; if there are any berries in a radius of 5 set the heading of the current turtle towards the nearest berry
-        ask ? [if not any? turtles in-radius 10 with [breed = food][ rt random 90 lt random 90]] ;; if no berries in radius 5 randomly change direction
-        ask ? [fd 1] ;; move the current turtle forward 1
-        
-      ]
-    ]
+              [
+                 set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself] ;; set the value of nearest berry to the closest berry 
+                 if any? turtles in-radius 10  with [breed = food ][face nearest-berry]  ;; if there are any berries in a radius of 10 set the heading of the current turtle towards the nearest berry
+                 if not any? turtles in-radius 10 with [breed = food][ rt random 90 lt random 90] ;; if no berries in radius 10 randomly change direction
+                 fd 1 ;; move the current turtle forward 1
+              ]
+          ]
     
     ask ? [if affection < 30 and energy > 30
-      [
-        ask ? [set nearest-agent min-one-of (turtles with [breed = agent ] )[distance myself]] ;; set the value of nearest berry to the closest berry 
-        ask ? [if any? turtles in-radius 10  with [breed = agent ][face nearest-agent]]  ;; if there are any berries in a radius of 5 set the heading of the current turtle towards the nearest berry
-        ask ? [if not any? turtles in-radius 10 with [breed = agent][ rt random 90 lt random 90]] ;; if no berries in radius 5 randomly change direction
-        ask ? [fd 1] ;; move the current turtle forward 1     
-        
-      ]
+              [
+                 set nearest-agent min-one-of other agent [distance myself]
+                 face nearest-agent
+                 fd 1      
+              ]      
+          ]
       
-      set energy(energy - 1)
-        ask ? [print energy]
-      set affection(affection - 1)
-        ask ? [print affection]
-    ]
+     ask ? [
+             set energy(energy - 1)
+             set affection(affection - 1)
+           ]
   ]
 end
 
 to eat
-  
+  foreach bhebix-list
+  [
+    ask ? [ if any? turtles-here with [breed = food] [ set energy (energy + 50) ]
+            if energy > 100 [ set energy 100]]
+   
+  ]
   foreach berry-list
   [
     ask ? [ if any? turtles-here with [breed = agent][die]]
     
   ]
-  end
+ end
 
 
-
-
+to interact
+  foreach bhebix-list
+  [
+    ask ? [ if any? other turtles-here with [breed = agent][ set affection ( affection + 50 )]]
+  ]
+end
+     
 
 
 
