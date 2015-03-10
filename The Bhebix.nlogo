@@ -11,6 +11,9 @@ globals
   newfood
   day 
   nighttime
+  partner-agent
+  partner-energy
+  pregnant-bhebix
 ]
 
 breed [ food berries ]    ;; these are the resources the agents will consume
@@ -22,12 +25,16 @@ agent-own
  energy ;; attribute to hold the energy of each individual agent
  affection ;; attribute to hold the affection level of each individual agent
  sleeping ;;
+ age ;;
+ pregnant ;;
+ labour-steps ;;
 ]
 
 to setup
   clear-all  ;; clear the environment to start fresh
   reset-ticks
   
+  set pregnant-bhebix 0;
   set nighttime 0
   set num-food 20 ;; set the initial number of food items
   set num-agents NumberAgents ;; set the initial number of agents
@@ -51,20 +58,23 @@ to setup
   ask agent [ set energy 100 ]
   ask agent [ set affection 100 ]
   ask agent [ set sleeping false ]
+  ask agent [ set age 0 ]
+  ask agent [ set pregnant 0 ]
  
 end
 
 to go
    set bhebix-list [self] of agent
    set berry-list [self] of food
-   
+   set num-agents (count turtles with [breed = agent])
   search
   eat
   interact
   generatefood
   sunset
+  mate
+  birth
   sleep
-  
   set day day + 1
   
    tick
@@ -87,16 +97,18 @@ to search
     ask ? [if affection < 30 and energy > 30 
               [
                  set nearest-agent min-one-of other agent [distance myself]
-                 face nearest-agent
-                 fd MovementSpeed      
-                ask nearest-agent [face myself]
-                  
+                 if num-agents > 1
+                 [
+                   face nearest-agent
+                   fd MovementSpeed      
+                   ask nearest-agent [face myself]
+                 ]
               ]      
           ]
     
       
      ask ? [
-             if energy > 0[ set energy(energy - 1)]
+             if energy > 0[ set energy(energy - 0.5)]
              if affection > 0 [ set affection(affection - AffectionMeter)]
            ]
     ]
@@ -138,7 +150,7 @@ to interact
   foreach bhebix-list
   [
     ask ? [ if any? other turtles-here with [breed = agent][ set affection 100]]
-    ask ? [print affection ]
+   
   ]
 end
      
@@ -184,12 +196,61 @@ to sleep
     if day = 0
     [
       ask ? [ set sleeping false ]
+      ask ? [ set age age + 1 ]
     ]
+    
+    ask ? [ if age = 3 or energy = 0 [die]]
   ]
     
   end
-      
+     
+to mate
+  foreach bhebix-list
+  [
+    ask ? [ if energy > 50 and affection > 50 and pregnant = 0
+      [ if any? other agent-here with [ energy > 50 and affection > 50 and pregnant = 0 and day < 500 ]
+        [
+          set partner-agent other agent-here
+          ask partner-agent [ set partner-energy energy]
+          ask ? [if energy < partner-energy and age > 1[ set pregnant 1 
+              
+              
+              set pregnant-bhebix pregnant-bhebix + 1
+              print pregnant-bhebix]]
+        ]
+        ]
+      ]
+    ]
+  
+  end
 
+to birth
+  foreach bhebix-list
+  [
+    ask ? [ if pregnant = 1
+      [ ifelse labour-steps = 200
+        [ 
+          ask patch-here [ sprout-agent 1
+            ask agent [
+              set energy 100
+              set affection 100
+              set pregnant 0
+              set sleeping false
+              set size 2
+              set labour-steps 0
+              set age 0] ]
+          ask ? [ set pregnant 0 ]
+        ]
+        [
+          ask ? [ set labour-steps labour-steps + 1 ]
+        ]
+      ]
+    ]
+  ]
+        
+            
+end
+  
 
 
 
@@ -272,7 +333,7 @@ AffectionMeter
 AffectionMeter
 1
 5
-5
+1
 0.1
 1
 NIL
@@ -317,11 +378,22 @@ NumberCaves
 NumberCaves
 1
 5
-2
+3
 1
 1
 NIL
 HORIZONTAL
+
+MONITOR
+74
+371
+131
+416
+Bhebix
+count turtles with [breed = agent]
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
