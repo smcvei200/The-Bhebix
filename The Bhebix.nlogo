@@ -6,7 +6,7 @@ globals
   berry-list
   nearest-berry
   nearest-agent
-  cuddle-agent
+  newfood
 ]
 
 breed [ food berries ]    ;; these are the resources the agents will consume
@@ -24,7 +24,7 @@ to setup
   reset-ticks
   
   set num-food 20 ;; set the initial number of food items
-  set num-agents 5 ;; set the initial number of agents
+  set num-agents NumberAgents ;; set the initial number of agents
   
   ask patches[ set pcolor green ]  ;; set background colour to green 
   
@@ -49,6 +49,7 @@ to go
   search
   eat
   interact
+  generatefood
  
    tick
 end
@@ -56,28 +57,29 @@ end
 to search
    foreach bhebix-list
   [
-    ask ? [if affection > 30 
+    ask ? [if affection > 30 or energy < 30
               [
                  set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself] ;; set the value of nearest berry to the closest berry 
                  if any? turtles in-radius 10  with [breed = food ][face nearest-berry]  ;; if there are any berries in a radius of 10 set the heading of the current turtle towards the nearest berry
                  if not any? turtles in-radius 10 with [breed = food][ rt random 90 lt random 90] ;; if no berries in radius 10 randomly change direction
-                 fd 1 ;; move the current turtle forward 1
+                 fd MovementSpeed ;; move the current turtle forward 1
               ]
           ]
     
-    ask ? [if affection < 30 
+    ask ? [if affection < 30 and energy > 30 
               [
                  set nearest-agent min-one-of other agent [distance myself]
                  face nearest-agent
-                 fd 1      
-                
+                 fd MovementSpeed      
+                ask nearest-agent [face myself]
+                  
               ]      
           ]
     
       
      ask ? [
-             set energy(energy - 1)
-             set affection(affection - 1)
+             if energy > 0[ set energy(energy - 1)]
+             if affection > 0 [ set affection(affection - AffectionMeter)]
            ]
   ]
 end
@@ -91,7 +93,10 @@ to eat
   ]
   foreach berry-list
   [
-    ask ? [ if any? turtles-here with [breed = agent][die]]
+    ask ? [ if any? turtles-here with [breed = agent][die]
+            set num-food (num-food - 1)
+      
+      ]
     
   ]
  end
@@ -100,12 +105,21 @@ to eat
 to interact
   foreach bhebix-list
   [
-    ask ? [ if any? other turtles-here with [breed = agent][ set affection ( affection + 50 )]]
+    ask ? [ if any? other turtles-here with [breed = agent][ set affection 100]]
     ask ? [print affection ]
   ]
 end
      
+to generatefood
+  set num-food (count turtles with [breed = food])
+  if num-food < 20
+  [
+    set newfood (20 - num-food)
+    ask n-of newfood patches [sprout-food 1]
+  ]
+  
 
+end
 
 
 
@@ -140,8 +154,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 -55
 55
@@ -186,6 +200,51 @@ G
 NIL
 NIL
 1
+
+SLIDER
+9
+161
+181
+194
+AffectionMeter
+AffectionMeter
+1
+5
+4
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+9
+204
+181
+237
+MovementSpeed
+MovementSpeed
+0.1
+1
+0.8
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+10
+245
+182
+278
+NumberAgents
+NumberAgents
+2
+20
+10
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
