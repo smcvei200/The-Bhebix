@@ -138,7 +138,6 @@ end
 
 
 
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
@@ -210,7 +209,7 @@ AffectionMeter
 AffectionMeter
 1
 5
-4
+5
 0.1
 1
 NIL
@@ -225,7 +224,7 @@ MovementSpeed
 MovementSpeed
 0.1
 1
-0.8
+1
 0.1
 1
 NIL
@@ -240,11 +239,28 @@ NumberAgents
 NumberAgents
 2
 20
-10
+15
 1
 1
 NIL
 HORIZONTAL
+
+BUTTON
+57
+15
+120
+48
+test
+NIL
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
