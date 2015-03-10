@@ -7,6 +7,7 @@ globals
   berry-list
   nearest-berry
   nearest-agent
+  nearest-cave
   newfood
   day 
   nighttime
@@ -20,7 +21,7 @@ agent-own
 [
  energy ;; attribute to hold the energy of each individual agent
  affection ;; attribute to hold the affection level of each individual agent
- 
+ sleeping ;;
 ]
 
 to setup
@@ -49,7 +50,7 @@ to setup
   ask agent [ set size 2 ]
   ask agent [ set energy 100 ]
   ask agent [ set affection 100 ]
-  
+  ask agent [ set sleeping false ]
  
 end
 
@@ -61,17 +62,19 @@ to go
   eat
   interact
   generatefood
- 
-    set day day + 1
-    
   sunset
+  sleep
+  
+  set day day + 1
+  
    tick
 end
 
 to search
    foreach bhebix-list
   [
-    
+    ifelse day < 500
+    [
     ask ? [if affection > 30 or energy < 30
               [
                  set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself] ;; set the value of nearest berry to the closest berry 
@@ -96,6 +99,20 @@ to search
              if energy > 0[ set energy(energy - 1)]
              if affection > 0 [ set affection(affection - AffectionMeter)]
            ]
+    ]
+    [
+      ask ? [
+        ifelse sleeping 
+        [
+          stop
+        ]
+        [
+              set nearest-cave min-one-of shelter [ distance myself ]
+              face nearest-cave
+              fd MovementSpeed
+        ]
+      ]
+    ]
   ]
 end
 
@@ -150,13 +167,28 @@ to sunset
          ]]
        set nighttime nighttime + 1
     ]
-     
-  
-  
 end
 
-
-
+to sleep
+  foreach bhebix-list
+  [
+    if day > 500
+    [
+      ask ? [ if any? turtles-here with [ breed = shelter][
+        set sleeping true
+        set energy 100
+        set affection 100
+      ]
+      ]
+    ]
+    if day = 0
+    [
+      ask ? [ set sleeping false ]
+    ]
+  ]
+    
+  end
+      
 
 
 
@@ -285,7 +317,7 @@ NumberCaves
 NumberCaves
 1
 5
-5
+2
 1
 1
 NIL
