@@ -1,5 +1,6 @@
 globals
 [
+  num-caves
   num-food
   num-agents
   bhebix-list
@@ -7,10 +8,13 @@ globals
   nearest-berry
   nearest-agent
   newfood
+  day 
+  nighttime
 ]
 
 breed [ food berries ]    ;; these are the resources the agents will consume
 breed [ agent bhebix ]    ;; these are the main agents
+breed [ shelter cave ]    ;; will provide the bhebix with shelter
 
 agent-own
 [
@@ -23,19 +27,25 @@ to setup
   clear-all  ;; clear the environment to start fresh
   reset-ticks
   
+  set nighttime 0
   set num-food 20 ;; set the initial number of food items
   set num-agents NumberAgents ;; set the initial number of agents
+  set num-caves NumberCaves ;; set the number of caves in the terrain
   
+  set day 0
   ask patches[ set pcolor green ]  ;; set background colour to green 
   
   set-default-shape food "berries" ;; set the shape of the food resources
   set-default-shape agent "bhebix" ;; set the shape of the agents
+  set-default-shape shelter "cave" ;; set the shape of the shelter
   
   
   
   ask n-of num-food patches [ sprout-food 1 ]  ;; randomly generate food on patches 
   ask n-of num-agents patches with [ not any? turtles-here ][ sprout-agent 1 ] ;; generate agent on random patch as long as there is no other turtles
+  ask n-of num-caves patches with [ not any? turtles in-radius 30 with [breed = shelter]  ][ sprout-shelter 1 ] ;; generate a cave on a random patch as long as there are no other turtles on that patch
   
+  ask shelter [ set size 3 ]
   ask agent [ set size 2 ]
   ask agent [ set energy 100 ]
   ask agent [ set affection 100 ]
@@ -46,17 +56,22 @@ end
 to go
    set bhebix-list [self] of agent
    set berry-list [self] of food
+   
   search
   eat
   interact
   generatefood
  
+    set day day + 1
+    
+  sunset
    tick
 end
 
 to search
    foreach bhebix-list
   [
+    
     ask ? [if affection > 30 or energy < 30
               [
                  set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself] ;; set the value of nearest berry to the closest berry 
@@ -121,8 +136,24 @@ to generatefood
 
 end
 
-
-
+to sunset
+  if day > 500 
+  [
+    
+    ask patches[ if nighttime < 10
+      [ set pcolor pcolor - 0.2 ]]
+     ask patches [ if nighttime > 200 and nighttime < 210
+       [ set pcolor pcolor + 0.2 ]]
+       ask patches [ if nighttime > 210
+         [ set nighttime 0
+           set day 0
+         ]]
+       set nighttime nighttime + 1
+    ]
+     
+  
+  
+end
 
 
 
@@ -245,22 +276,20 @@ NumberAgents
 NIL
 HORIZONTAL
 
-BUTTON
-57
-15
-120
-48
-test
-NIL
-NIL
+SLIDER
+9
+287
+181
+320
+NumberCaves
+NumberCaves
 1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
+5
+5
 1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -381,6 +410,12 @@ Circle -16777216 true false 30 180 90
 Polygon -16777216 true false 162 80 132 78 134 135 209 135 194 105 189 96 180 89
 Circle -7500403 true true 47 195 58
 Circle -7500403 true true 195 195 58
+
+cave
+false
+0
+Polygon -6459832 true false 30 225 30 90 90 30 210 30 270 90 270 225
+Polygon -16777216 true false 75 225 75 105 105 75 195 75 225 105 225 225
 
 circle
 false
