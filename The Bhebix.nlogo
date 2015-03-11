@@ -199,7 +199,8 @@ to sleep
       ask ? [ set age age + 1 ]
     ]
     
-    ask ? [ if age = 3 or energy = 0 [die]]
+    ask ? [if age = 1 [ set size 2 ]]
+    ask ? [ if age = 6 or energy = 0 [die]]
   ]
     
   end
@@ -207,20 +208,20 @@ to sleep
 to mate
   foreach bhebix-list
   [
-    ask ? [ if energy > 50 and affection > 50 and pregnant = 0
-      [ if any? other agent-here with [ energy > 50 and affection > 50 and pregnant = 0 and day < 500 ]
+    ask ? [ if energy > 80 and affection > 80 and pregnant = 0 and age > 0 and day > 20
+      [ if any? other agent-here with [ energy > 50 and affection > 50 and pregnant != 1  and age > 0 and day < 500 ]
         [
           set partner-agent other agent-here
           ask partner-agent [ set partner-energy energy]
-          ask ? [if energy < partner-energy and age > 1[ set pregnant 1 
+          ask ? [if energy < partner-energy and age > 0[ set pregnant 1 
               
-              
+             ;;ask ? [ set pregnant 1 
               set pregnant-bhebix pregnant-bhebix + 1
               print pregnant-bhebix]]
         ]
         ]
       ]
-    ]
+  ]
   
   end
 
@@ -230,16 +231,17 @@ to birth
     ask ? [ if pregnant = 1
       [ ifelse labour-steps = 200
         [ 
-          ask patch-here [ sprout-agent 1
-            ask agent [
+          ask patch-here [sprout-agent 1]
+            ask max-one-of turtles-here[who] [
               set energy 100
               set affection 100
               set pregnant 0
               set sleeping false
-              set size 2
+              set size 1
               set labour-steps 0
-              set age 0] ]
-          ask ? [ set pregnant 0 ]
+              set age 0] 
+          ask ? [ set pregnant 2
+            set labour-steps 0 ]
         ]
         [
           ask ? [ set labour-steps labour-steps + 1 ]
@@ -251,7 +253,6 @@ to birth
             
 end
   
-
 
 
 
@@ -277,8 +278,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-0
-0
+1
+1
 1
 -55
 55
@@ -333,7 +334,7 @@ AffectionMeter
 AffectionMeter
 1
 5
-1
+5
 0.1
 1
 NIL
@@ -378,7 +379,7 @@ NumberCaves
 NumberCaves
 1
 5
-3
+5
 1
 1
 NIL
