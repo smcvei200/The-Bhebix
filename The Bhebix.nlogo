@@ -14,6 +14,9 @@ globals
   partner-agent
   partner-energy
   pregnant-bhebix
+  raining
+  rainfall
+  moisture
 ]
 
 breed [ food berries ]    ;; these are the resources the agents will consume
@@ -47,7 +50,9 @@ to setup
   set-default-shape agent "bhebix" ;; set the shape of the agents
   set-default-shape shelter "cave" ;; set the shape of the shelter
   
-  
+  set raining 0
+  set rainfall 0
+  set moisture 100
   
   ask n-of num-food patches [ sprout-food 1 ]  ;; randomly generate food on patches 
   ask n-of num-agents patches with [ not any? turtles-here ][ sprout-agent 1 ] ;; generate agent on random patch as long as there is no other turtles
@@ -74,6 +79,13 @@ to go
   sunset
   mate
   birth
+  if day = 150 
+  [
+    if random 2 = 1
+    [set raining 1]
+    set moisture moisture - 20
+  ]
+  rain
   sleep
   set day day + 1
   
@@ -85,6 +97,26 @@ to search
   [
     ifelse day < 500
     [
+      ifelse raining = 1
+      [
+        ask ? [ if energy > 30
+          [
+             set nearest-cave min-one-of shelter [ distance myself ]
+              face nearest-cave
+              fd MovementSpeed
+          ]]
+          ask ? [ if energy < 30 
+            [
+                 set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself] ;; set the value of nearest berry to the closest berry 
+                 if any? turtles in-radius 10  with [breed = food ][face nearest-berry]  ;; if there are any berries in a radius of 10 set the heading of the current turtle towards the nearest berry
+                 if not any? turtles in-radius 10 with [breed = food][ rt random 90 lt random 90] ;; if no berries in radius 10 randomly change direction
+                 fd MovementSpeed ;; move the current turtle forward 1
+            ]
+          ]
+        ]
+      
+      [
+      
     ask ? [if affection > 30 or energy < 30
               [
                  set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself] ;; set the value of nearest berry to the closest berry 
@@ -111,6 +143,9 @@ to search
              if energy > 0[ set energy(energy - 0.5)]
              if affection > 0 [ set affection(affection - AffectionMeter)]
            ]
+     
+     
+     ]
     ]
     [
       ask ? [
@@ -156,12 +191,26 @@ end
      
 to generatefood
   set num-food (count turtles with [breed = food])
-  if num-food < 20
+  if num-food < 20 and moisture = 100
   [
     set newfood (20 - num-food)
     ask n-of newfood patches [sprout-food 1]
   ]
   
+  if moisture >= 80
+  [
+    if num-food <= 15 [ ask n-of 3 patches [ sprout-food 1 ]] 
+  ]
+  
+  if moisture < 80 and moisture >= 60 
+  [
+    if num-food <= 10 [ ask n-of 3 patches [ sprout-food 1 ]]
+  ]
+  
+  if moisture < 60 
+  [
+    if num-food < 8 [ ask n-of 3 patches [ sprout-food 1 ]]
+  ]
 
 end
 
@@ -178,6 +227,7 @@ to sunset
            set day 0
          ]]
        set nighttime nighttime + 1
+       set moisture moisture + 10
     ]
 end
 
@@ -254,8 +304,26 @@ to birth
 end
   
 
-
-
+to rain
+  if raining = 1
+  [
+    ask patches [ set pcolor green ]
+   
+    ask n-of 75 patches [ set pcolor blue + 1 ]
+      ;;ask n-of 50 patches [ set pcolor green ]
+    set rainfall rainfall + 1
+    
+  ]
+  
+  if rainfall = 100
+  [
+    if moisture < 100 [ set moisture moisture + 40 ]
+    if moisture > 100 [ set moisture 100 ]
+    set raining 0
+    ask patches [ set pcolor green ]
+    set rainfall 0
+  ]
+end
 
 
 
@@ -265,10 +333,10 @@ end
 
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
-10
-1330
-511
+205
+11
+1325
+512
 55
 23
 10.0
@@ -386,15 +454,44 @@ NIL
 HORIZONTAL
 
 MONITOR
-74
-371
-131
-416
+9
+319
+66
+364
 Bhebix
 count turtles with [breed = agent]
 17
 1
 11
+
+MONITOR
+65
+319
+122
+364
+Berries
+count turtles with [breed = food]
+17
+1
+11
+
+PLOT
+20
+401
+180
+521
+Agents vs Berries
+ticks
+NumAgents
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"numAgents" 1.0 0 -5825686 true "" "plot count turtles with [breed = agent]"
 
 @#$#@#$#@
 ## WHAT IS IT?
