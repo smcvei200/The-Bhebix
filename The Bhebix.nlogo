@@ -17,6 +17,7 @@ globals
   raining
   rainfall
   moisture
+  interactions
 ]
 
 breed [ food berries ]    ;; these are the resources the agents will consume
@@ -54,6 +55,9 @@ to setup
   set rainfall 0
   set moisture 100
   
+  
+  set interactions 0
+  
   ask n-of num-food patches [ sprout-food 1 ]  ;; randomly generate food on patches 
   ask n-of num-agents patches with [ not any? turtles-here ][ sprout-agent 1 ] ;; generate agent on random patch as long as there is no other turtles
   ask n-of num-caves patches with [ not any? turtles in-radius 30 with [breed = shelter]  ][ sprout-shelter 1 ] ;; generate a cave on a random patch as long as there are no other turtles on that patch
@@ -72,6 +76,8 @@ to go
    set bhebix-list [self] of agent
    set berry-list [self] of food
    set num-agents (count turtles with [breed = agent])
+   
+   ask agent [ set label round affection ]
   search
   eat
   interact
@@ -132,7 +138,7 @@ to search
                  if num-agents > 1
                  [
                    face nearest-agent
-                   fd MovementSpeed      
+                   fd MovementSpeed / 2     
                    ask nearest-agent [face myself]
                  ]
               ]      
@@ -185,6 +191,8 @@ to interact
   foreach bhebix-list
   [
     ask ? [ if any? other turtles-here with [breed = agent][ set affection 100]]
+    set interactions interactions + 1
+    print interactions
    
   ]
 end
@@ -225,9 +233,11 @@ to sunset
        ask patches [ if nighttime > 210
          [ set nighttime 0
            set day 0
+           
          ]]
        set nighttime nighttime + 1
        set moisture moisture + 10
+       clear-drawing
     ]
 end
 
@@ -330,7 +340,6 @@ end
 
 
 
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 205
@@ -402,7 +411,7 @@ AffectionMeter
 AffectionMeter
 1
 5
-5
+1
 0.1
 1
 NIL
