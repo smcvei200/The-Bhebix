@@ -32,6 +32,7 @@ agent-own
  age ;;
  pregnant ;;
  labour-steps ;;
+ ask-cuddle
 ]
 
 to setup
@@ -69,6 +70,7 @@ to setup
   ask agent [ set sleeping false ]
   ask agent [ set age 0 ]
   ask agent [ set pregnant 0 ]
+  ask agent [ set ask-cuddle 0 ]
  
 end
 
@@ -77,7 +79,7 @@ to go
    set berry-list [self] of food
    set num-agents (count turtles with [breed = agent])
    
-   ask agent [ set label round affection ]
+   ask agent [ set label round ask-cuddle ]
   search
   eat
   interact
@@ -92,6 +94,7 @@ to go
     set moisture moisture - 20
   ]
   rain
+  cuddle
   sleep
   set day day + 1
   
@@ -103,6 +106,7 @@ to search
   [
     ifelse day < 500
     [
+      
       ifelse raining = 1
       [
         ask ? [ if energy > 30
@@ -139,7 +143,7 @@ to search
                  [
                    face nearest-agent
                    fd MovementSpeed / 2     
-                   ask nearest-agent [face myself]
+                   ask nearest-agent [set ask-cuddle 1];;face myself]
                  ]
               ]      
           ]
@@ -153,6 +157,7 @@ to search
      
      ]
     ]
+    
     [
       ask ? [
         ifelse sleeping 
@@ -166,6 +171,7 @@ to search
         ]
       ]
     ]
+  
   ]
 end
 
@@ -299,7 +305,8 @@ to birth
               set sleeping false
               set size 1
               set labour-steps 0
-              set age 0] 
+              set age 0
+              set ask-cuddle 0] 
           ask ? [ set pregnant 2
             set labour-steps 0 ]
         ]
@@ -335,6 +342,12 @@ to rain
   ]
 end
 
+to cuddle
+  foreach bhebix-list
+  [
+    ask ? [ if ask-cuddle = 1 [ stop ]]
+  ]
+end
 
 
 
