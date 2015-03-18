@@ -106,12 +106,20 @@ to search
   [
     ifelse day < 500
     [
-      
-      ifelse raining = 1
+      ask ? [ ifelse ask-cuddle >  0
+        [
+          
+          ask ? [set ask-cuddle ask-cuddle + 1]
+          ask ? [if ask-cuddle > 10 [ set ask-cuddle 0 ]]
+          stop
+        ]
       [
-        ask ? [ if energy > 30
-          [
-             set nearest-cave min-one-of shelter [ distance myself ]
+        
+        ifelse raining = 1
+        [
+          ask ? [ if energy > 30
+            [
+              set nearest-cave min-one-of shelter [ distance myself ]
               face nearest-cave
               fd MovementSpeed
           ]]
@@ -142,8 +150,8 @@ to search
                  if num-agents > 1
                  [
                    face nearest-agent
-                   fd MovementSpeed / 2     
-                   ask nearest-agent [set ask-cuddle 1];;face myself]
+                   fd MovementSpeed      
+                   ask nearest-agent [if ask-cuddle = 0 [set ask-cuddle 1]];;face myself]
                  ]
               ]      
           ]
@@ -157,7 +165,7 @@ to search
      
      ]
     ]
-    
+      ]]
     [
       ask ? [
         ifelse sleeping 
@@ -196,9 +204,12 @@ to eat
 to interact
   foreach bhebix-list
   [
-    ask ? [ if any? other turtles-here with [breed = agent][ set affection 100]]
-    set interactions interactions + 1
+    ask ? [ if any? other turtles-here with [breed = agent][ set affection 100
+        set ask-cuddle 0
+         set interactions interactions + 1]]
+   
     print interactions
+     
    
   ]
 end
@@ -243,7 +254,7 @@ to sunset
          ]]
        set nighttime nighttime + 1
        set moisture moisture + 10
-       clear-drawing
+       
     ]
 end
 
@@ -352,7 +363,6 @@ end
 
 
 
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 205
@@ -424,7 +434,7 @@ AffectionMeter
 AffectionMeter
 1
 5
-1
+5
 0.1
 1
 NIL
@@ -454,7 +464,7 @@ NumberAgents
 NumberAgents
 2
 20
-15
+5
 1
 1
 NIL
