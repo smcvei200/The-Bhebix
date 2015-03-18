@@ -39,6 +39,11 @@ agent-own
  ask-cuddle
 ]
 
+predator-own
+[
+  death
+]
+
 to setup
   clear-all  ;; clear the environment to start fresh
   reset-ticks
@@ -103,7 +108,7 @@ to go
   rain
   sleep
   set bhebix-list [self] of agent
-  if hunting-season = 300
+  if hunting-season = 1500
   [
     initialise-hunt
   ]
@@ -371,10 +376,13 @@ to initialise-hunt
   ask patches with [ pxcor = -50 and pycor = -20 ][ sprout-predator 1 ] 
   ask patches with [ pxcor = 50 and pycor = 20 ][ sprout-predator 1 ]
   ask patches with [ pxcor = 50 and pycor = -20 ][ sprout-predator 1 ]
-  ask predator [ set size 3 ]
+  ask predator [ set size 3 
+                 set death 0]
 end
 
 to hunt 
+  ifelse hunting-season < 1600
+  [
   foreach taikubb-list
   [
     ask ? [ 
@@ -397,8 +405,35 @@ to hunt
   [
     ask ? [ if any? turtles-here with [ breed = predator][ die ] ]
   ]
+  ]
+  [
+    foreach taikubb-list
+    [
+      ask ? [ if xcor <= 0 and ycor <= 0 [ facexy -55 -23
+                                           fd 1 ] ]
+      ask ? [ if xcor <= 0 and ycor > 0 [ facexy -55 23
+                                           fd 1 ] ]
+      ask ? [ if xcor > 0 and ycor <= 0 [ facexy 55 -23
+                                           fd 1 ] ]
+      ask ? [ if xcor > 0 and ycor > 0 [ facexy 55 23
+                                           fd 1 ] ]
+      ask ? [ if xcor < -50 and ycor < -20 [ set death 1 ] ]
+      ask ? [ if xcor < -50 and ycor > 20  [ set death 1 ] ]
+      ask ? [ if xcor >  50 and ycor < -20 [ set death 1 ] ]
+      ask ? [ if xcor >  50 and ycor > 20  [ set death 1 ] ]
+    ]
+    ask predator [ if death > 0 [ die ] ]
+  ]
   
 end
+
+
+
+
+
+
+
+
 @#$#@#$#@
 GRAPHICS-WINDOW
 205
