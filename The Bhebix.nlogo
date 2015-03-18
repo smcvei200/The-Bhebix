@@ -206,8 +206,8 @@ to interact
   [
     ask ? [ if any? other turtles-here with [breed = agent][ set affection 100
         set ask-cuddle 0
-         set interactions interactions + 1]]
-   
+         ask ? [if any? other agent-here with [affection < 30 ][set interactions interactions + 1]]]
+    ]
     print interactions
      
    
@@ -392,10 +392,10 @@ ticks
 30.0
 
 BUTTON
-57
-65
-121
-98
+6
+10
+70
+43
 Setup
 setup
 NIL
@@ -409,10 +409,10 @@ NIL
 1
 
 BUTTON
-58
-99
-122
-133
+70
+10
+134
+44
 Go
 go
 T
@@ -426,10 +426,10 @@ NIL
 1
 
 SLIDER
-9
-161
-181
-194
+6
+43
+178
+76
 AffectionMeter
 AffectionMeter
 1
@@ -441,10 +441,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-9
-204
-181
-237
+6
+76
+178
+109
 MovementSpeed
 MovementSpeed
 0.1
@@ -456,10 +456,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-10
-245
-182
-278
+6
+108
+178
+141
 NumberAgents
 NumberAgents
 2
@@ -471,10 +471,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-9
-287
-181
-320
+6
+141
+178
+174
 NumberCaves
 NumberCaves
 1
@@ -486,10 +486,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-9
-319
-66
-364
+6
+174
+63
+219
 Bhebix
 count turtles with [breed = agent]
 17
@@ -497,10 +497,10 @@ count turtles with [breed = agent]
 11
 
 MONITOR
-65
-319
-122
-364
+62
+174
+119
+219
 Berries
 count turtles with [breed = food]
 17
@@ -508,11 +508,11 @@ count turtles with [breed = food]
 11
 
 PLOT
-20
-401
-180
-521
-Agents vs Berries
+6
+218
+166
+338
+Agents Population
 ticks
 NumAgents
 0.0
@@ -524,6 +524,17 @@ false
 "" ""
 PENS
 "numAgents" 1.0 0 -5825686 true "" "plot count turtles with [breed = agent]"
+
+MONITOR
+118
+174
+198
+219
+Interactions
+interactions
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
