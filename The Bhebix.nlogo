@@ -18,11 +18,14 @@ globals
   rainfall
   moisture
   interactions
+  hunting-season
+  taikubb-list
 ]
 
 breed [ food berries ]    ;; these are the resources the agents will consume
 breed [ agent bhebix ]    ;; these are the main agents
 breed [ shelter cave ]    ;; will provide the bhebix with shelter
+breed [ predator taikubb ]
 
 agent-own
 [
@@ -51,6 +54,7 @@ to setup
   set-default-shape food "berries" ;; set the shape of the food resources
   set-default-shape agent "bhebix" ;; set the shape of the agents
   set-default-shape shelter "cave" ;; set the shape of the shelter
+  set-default-shape predator "taikubb"
   
   set raining 0
   set rainfall 0
@@ -58,6 +62,7 @@ to setup
   
   
   set interactions 0
+  set hunting-season 0
   
   ask n-of num-food patches [ sprout-food 1 ]  ;; randomly generate food on patches 
   ask n-of num-agents patches with [ not any? turtles-here ][ sprout-agent 1 ] ;; generate agent on random patch as long as there is no other turtles
@@ -77,6 +82,7 @@ end
 to go
    set bhebix-list [self] of agent
    set berry-list [self] of food
+   set taikubb-list [self] of predator
    set num-agents (count turtles with [breed = agent])
    
    ask agent [ set label round ask-cuddle ]
@@ -94,9 +100,14 @@ to go
     set moisture moisture - 20
   ]
   rain
-  cuddle
   sleep
+  if hunting-season = 300
+  [
+    initialise-hunt
+  ]
+  hunt
   set day day + 1
+  set hunting-season hunting-season + 1
   
    tick
 end
@@ -353,15 +364,21 @@ to rain
   ]
 end
 
-to cuddle
-  foreach bhebix-list
-  [
-    ask ? [ if ask-cuddle = 1 [ stop ]]
-  ]
+to initialise-hunt
+  ask patches with [ pxcor = -55 and pycor = 23 ][ sprout-predator 1 ]
+  ask patches with [ pxcor = -55 and pycor = -23 ][ sprout-predator 1 ] 
+  ask patches with [ pxcor = 55 and pycor = 23 ][ sprout-predator 1 ]
+  ask patches with [ pxcor = 55 and pycor = -23 ][ sprout-predator 1 ]
+  ask predator [ set size 3 ]
 end
 
-
-
+to hunt 
+  foreach taikubb-list
+  [
+    ask ? [ find nearest bhebix
+    ]
+  ]
+end
 
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -829,6 +846,22 @@ star
 false
 0
 Polygon -7500403 true true 151 1 185 108 298 108 207 175 242 282 151 216 59 282 94 175 3 108 116 108
+
+taikubb
+false
+0
+Polygon -13345367 true false 15 210 45 180 15 150 75 150 15 90 90 105 60 45 105 75 120 15 135 75 165 0 180 75 225 30 210 105 270 60 225 135 285 135 225 180 285 195 225 210
+Circle -1 true false 105 105 30
+Circle -1 true false 135 105 30
+Polygon -16777216 true false 120 120 120 135 135 135 135 120 120 120
+Polygon -16777216 true false 150 120 150 135 165 135 165 120 150 120
+Polygon -2674135 true false 120 150 165 150 165 165 150 150 135 165 135 150 120 165 120 150 105 165 105 150
+Polygon -2674135 true false 120 195 165 195 165 180 150 195 135 180 135 195 120 180 120 195 105 180 105 195
+Polygon -2064490 true false 105 165 105 180 120 195 120 180 135 195 135 180 150 195 165 180 165 165 150 150 135 165 135 150 120 165 120 150
+Polygon -13791810 true false 120 210 120 225 105 225 105 240 135 240 135 210 120 210 120 210
+Polygon -13791810 true false 165 210 165 225 180 225 180 240 150 240 150 210 165 210 165 210
+Polygon -13791810 true false 195 150 195 120 180 120 180 90 195 105 195 90 210 105 225 90 225 120 210 120 210 165 180 165 180 150
+Polygon -13791810 true false 75 150 75 120 90 120 90 90 75 105 75 90 60 105 45 90 45 120 60 120 60 165 90 165 90 150
 
 target
 false
