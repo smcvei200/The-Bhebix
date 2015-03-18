@@ -20,6 +20,7 @@ globals
   interactions
   hunting-season
   taikubb-list
+  nearest-prey
 ]
 
 breed [ food berries ]    ;; these are the resources the agents will consume
@@ -101,6 +102,7 @@ to go
   ]
   rain
   sleep
+  set bhebix-list [self] of agent
   if hunting-season = 300
   [
     initialise-hunt
@@ -365,21 +367,38 @@ to rain
 end
 
 to initialise-hunt
-  ask patches with [ pxcor = -55 and pycor = 23 ][ sprout-predator 1 ]
-  ask patches with [ pxcor = -55 and pycor = -23 ][ sprout-predator 1 ] 
-  ask patches with [ pxcor = 55 and pycor = 23 ][ sprout-predator 1 ]
-  ask patches with [ pxcor = 55 and pycor = -23 ][ sprout-predator 1 ]
+  ask patches with [ pxcor = -50 and pycor = 20 ][ sprout-predator 1 ]
+  ask patches with [ pxcor = -50 and pycor = -20 ][ sprout-predator 1 ] 
+  ask patches with [ pxcor = 50 and pycor = 20 ][ sprout-predator 1 ]
+  ask patches with [ pxcor = 50 and pycor = -20 ][ sprout-predator 1 ]
   ask predator [ set size 3 ]
 end
 
 to hunt 
   foreach taikubb-list
   [
-    ask ? [ find nearest bhebix
+    ask ? [ 
+      if num-agents > 0
+      [
+        set nearest-prey min-one-of agent [ distance myself ]
+        ifelse any? turtles in-radius 5 with [ breed = agent ]
+        [
+          face nearest-prey
+          fd 1
+        ]
+        [
+          rt random 90 lt random 90 
+          fd 1
+        ]
+      ]       
     ]
   ]
+  foreach bhebix-list 
+  [
+    ask ? [ if any? turtles-here with [ breed = predator][ die ] ]
+  ]
+  
 end
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 205
@@ -481,7 +500,7 @@ NumberAgents
 NumberAgents
 2
 20
-5
+20
 1
 1
 NIL
@@ -858,8 +877,8 @@ Polygon -16777216 true false 150 120 150 135 165 135 165 120 150 120
 Polygon -2674135 true false 120 150 165 150 165 165 150 150 135 165 135 150 120 165 120 150 105 165 105 150
 Polygon -2674135 true false 120 195 165 195 165 180 150 195 135 180 135 195 120 180 120 195 105 180 105 195
 Polygon -2064490 true false 105 165 105 180 120 195 120 180 135 195 135 180 150 195 165 180 165 165 150 150 135 165 135 150 120 165 120 150
-Polygon -13791810 true false 120 210 120 225 105 225 105 240 135 240 135 210 120 210 120 210
-Polygon -13791810 true false 165 210 165 225 180 225 180 240 150 240 150 210 165 210 165 210
+Polygon -13791810 true false 120 210 120 225 105 225 105 240 135 240 135 210 120 210
+Polygon -13791810 true false 165 210 165 225 180 225 180 240 150 240 150 210 165 210
 Polygon -13791810 true false 195 150 195 120 180 120 180 90 195 105 195 90 210 105 225 90 225 120 210 120 210 165 180 165 180 150
 Polygon -13791810 true false 75 150 75 120 90 120 90 90 75 105 75 90 60 105 45 90 45 120 60 120 60 165 90 165 90 150
 
