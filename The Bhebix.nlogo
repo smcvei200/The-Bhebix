@@ -99,7 +99,7 @@ to go
   sunset
   mate
   birth
-  if day = 150 
+  if day = 150 and hunting-season < 1500
   [
     if random 2 = 1
     [set raining 1]
@@ -108,9 +108,10 @@ to go
   rain
   sleep
   set bhebix-list [self] of agent
-  if hunting-season = 1500
+  if hunting-season = 1500 and raining != 1
   [
     initialise-hunt
+    ask patches [ set pcolor red ] 
   ]
   hunt
   set day day + 1
@@ -423,10 +424,16 @@ to hunt
       ask ? [ if xcor >  50 and ycor > 20  [ set death 1 ] ]
     ]
     ask predator [ if death > 0 [ die ] ]
+    if count predator = 0
+  [
+    set hunting-season 0 
+    ask patches [ set pcolor green ]
+  ]
   ]
   
+  
+  
 end
-
 
 
 
