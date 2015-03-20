@@ -1,3 +1,6 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;    GLOBAL VARIABLES     ;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 globals
 [
   num-caves
@@ -13,7 +16,6 @@ globals
   nighttime
   partner-agent
   partner-energy
-  pregnant-bhebix
   raining
   rainfall
   moisture
@@ -21,52 +23,71 @@ globals
   hunting-season
   taikubb-list
   nearest-prey
+  nearest-predator
+  shelter-list
+  individual-interactions
+  individual-berries
 ]
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;     set the agentsets for the different       ;;;;;
+;;;;;     turtles                                   ;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 breed [ food berries ]    ;; these are the resources the agents will consume
 breed [ agent bhebix ]    ;; these are the main agents
 breed [ shelter cave ]    ;; will provide the bhebix with shelter
-breed [ predator taikubb ]
+breed [ predator taikubb ] ;; these are the predators which will hunt the Bhebix
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;     Individual Attributes of the Bhebix       ;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 agent-own
 [
- energy ;; attribute to hold the energy of each individual agent
- affection ;; attribute to hold the affection level of each individual agent
+ energy ;; 
+ affection ;; 
  sleeping ;;
  age ;;
  pregnant ;;
  labour-steps ;;
- ask-cuddle
+ ask-cuddle   ;;
+ own-interactions ;;
+ own-berries ;;
 ]
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;     Individual Attributes of the Taikubb      ;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 predator-own
 [
   death
 ]
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;     Initial Setup procedure which will be     ;;;;;
+;;;;;     activated when the user presses the       ;;;;;
+;;;;;     setup button.                             ;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 to setup
   clear-all  ;; clear the environment to start fresh
   reset-ticks
   
-  set pregnant-bhebix 0;
-  set nighttime 0
-  set num-food 20 ;; set the initial number of food items
   set num-agents NumberAgents ;; set the initial number of agents
   set num-caves NumberCaves ;; set the number of caves in the terrain
-  
-  set day 0
+    
   ask patches[ set pcolor green ]  ;; set background colour to green 
   
   set-default-shape food "berries" ;; set the shape of the food resources
   set-default-shape agent "bhebix" ;; set the shape of the agents
   set-default-shape shelter "cave" ;; set the shape of the shelter
-  set-default-shape predator "taikubb"
+  set-default-shape predator "taikubb" ;; set the shape of the predator
   
+  ;;set the initial value for corresponding global variables
+  set nighttime 0 
+  set num-food 20 
+  set day 0 
   set raining 0
   set rainfall 0
   set moisture 100
-  
-  
   set interactions 0
   set hunting-season 0
   
@@ -74,24 +95,36 @@ to setup
   ask n-of num-agents patches with [ not any? turtles-here ][ sprout-agent 1 ] ;; generate agent on random patch as long as there is no other turtles
   ask n-of num-caves patches with [ not any? turtles in-radius 30 with [breed = shelter]  ][ sprout-shelter 1 ] ;; generate a cave on a random patch as long as there are no other turtles on that patch
   
-  ask shelter [ set size 3 ]
-  ask agent [ set size 2 ]
-  ask agent [ set energy 100 ]
-  ask agent [ set affection 100 ]
-  ask agent [ set sleeping false ]
-  ask agent [ set age 0 ]
-  ask agent [ set pregnant 0 ]
-  ask agent [ set ask-cuddle 0 ]
+  
+  ask shelter [ set size 3 ] ;; set size of caves
+  ask agent [ set size 2 ;; set initial value of indiviual agent attributes
+   set energy 100 
+   set affection 100 
+   set sleeping false 
+   set age 0 
+   set pregnant 0 
+   set ask-cuddle 0 
+   set own-interactions 0
+   set own-berries 0]
  
 end
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;     Go procedure will begin the simulation     ;;;;;
+;;;;;     when the user presses the Go button        ;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 to go
+  
+  ;; create a list for each set of turtles
    set bhebix-list [self] of agent
    set berry-list [self] of food
    set taikubb-list [self] of predator
+   set shelter-list [self] of shelter
+   
+   ;;set value of num-agents
    set num-agents (count turtles with [breed = agent])
    
-   ask agent [ set label round ask-cuddle ]
+   
   search
   eat
   interact
@@ -108,22 +141,28 @@ to go
   rain
   sleep
   set bhebix-list [self] of agent
-  if hunting-season = 1500 and raining != 1
+  if hunting-season = 1500 and raining != 1 and day < 500
   [
     initialise-hunt
     ask patches [ set pcolor red ] 
   ]
   hunt
+   set bhebix-list [self] of agent
+  hide
   set day day + 1
   set hunting-season hunting-season + 1
   
    tick
 end
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;     Search procedure will instruct the Bhebix which action to take     ;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 to search
-   foreach bhebix-list
+   foreach bhebix-list  ;; foreach will iterate througe each agent in the list
   [
-    ifelse day < 500
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;if day < 500
+    ifelse day < 500  ;; if the value of day is greater than 500 proceed to the else
     [
       ask ? [ ifelse ask-cuddle >  0
         [
@@ -133,15 +172,19 @@ to search
           stop
         ]
       [
-        
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;if it is raining
         ifelse raining = 1
         [
+          ;;if current agent has energy greater than 30, 
+          ;;face nearest shelter and move towards it
           ask ? [ if energy > 30
             [
-              set nearest-cave min-one-of shelter [ distance myself ]
-              face nearest-cave
-              fd MovementSpeed
+              set nearest-cave min-one-of shelter [ distance myself ] ;;set the value of nearest-cave to the closest shelter
+              face nearest-cave  ;; set the heading of the current agent towards nearest cave
+              fd MovementSpeed   ;; move forward 
           ]]
+          ;;if current agent has energy less than 30, 
+          ;;continue searching for food
           ask ? [ if energy < 30 
             [
                  set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself] ;; set the value of nearest berry to the closest berry 
@@ -151,10 +194,11 @@ to search
             ]
           ]
         ]
-      
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;else its not raining
       [
-      
-    ask ? [if affection > 30 or energy < 30
+      ;;if current agent has affection greater than 30 and energy less than 30, 
+      ;;search for food
+         ask ? [if affection > 30 or energy < 30
               [
                  set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself] ;; set the value of nearest berry to the closest berry 
                  if any? turtles in-radius 10  with [breed = food ][face nearest-berry]  ;; if there are any berries in a radius of 10 set the heading of the current turtle towards the nearest berry
@@ -162,20 +206,21 @@ to search
                  fd MovementSpeed ;; move the current turtle forward 1
               ]
           ]
-    
+    ;;if current agent has affection less than 30 and energy greater than 30
+    ;;search for another agent
     ask ? [if affection < 30 and energy > 30 
               [
-                 set nearest-agent min-one-of other agent [distance myself]
-                 if num-agents > 1
+                 set nearest-agent min-one-of other agent [distance myself];;set the value of nearest-agent to the agent smallest distance away
+                 if num-agents > 1 ;; if there are more than 1 agents
                  [
-                   face nearest-agent
-                   fd MovementSpeed      
-                   ask nearest-agent [if ask-cuddle = 0 [set ask-cuddle 1]];;face myself]
+                   face nearest-agent ;; set heading of current agent towards nearest-agent
+                   fd MovementSpeed   ;; move the current agent forward   
+                   ask nearest-agent [if ask-cuddle = 0 [set ask-cuddle 1]] ;; ask the nearest agent to set its own value of ask-cuddle to one
                  ]
               ]      
           ]
     
-      
+      ;;reduce the agents energy and affection
      ask ? [
              if energy > 0[ set energy(energy - 0.5)]
              if affection > 0 [ set affection(affection - AffectionMeter)]
@@ -185,16 +230,19 @@ to search
      ]
     ]
       ]]
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;else day < 500
     [
+      
       ask ? [
-        ifelse sleeping 
+        ifelse sleeping;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;agent is sleeping
         [
-          stop
+          stop;; stop the current agent
         ]
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;agent is not sleeping
         [
-              set nearest-cave min-one-of shelter [ distance myself ]
-              face nearest-cave
-              fd MovementSpeed
+              set nearest-cave min-one-of shelter [ distance myself ];;set the value of nearest-cave to the closest shelter
+              face nearest-cave ;; set the heading of the current agent towards the closest shelter
+              fd MovementSpeed  ;; move the current agent forwards
         ]
       ]
     ]
@@ -205,7 +253,8 @@ end
 to eat
   foreach bhebix-list
   [
-    ask ? [ if any? turtles-here with [breed = food] [ set energy (energy + 50) ]
+    ask ? [ if any? turtles-here with [breed = food] [ set energy (energy + 50)
+                                                       set own-berries own-berries + 1 ]
             if energy > 100 [ set energy 100]]
    
   ]
@@ -217,6 +266,11 @@ to eat
       ]
     
   ]
+  
+  ask min-one-of agent [who]
+  [
+    set individual-berries own-berries
+  ]
  end
 
 
@@ -225,11 +279,17 @@ to interact
   [
     ask ? [ if any? other turtles-here with [breed = agent][ set affection 100
         set ask-cuddle 0
-         ask ? [if any? other agent-here with [affection < 30 ][set interactions interactions + 1]]]
+         ask ? [if any? other agent-here with [affection < 30 ][set interactions interactions + 1
+             set own-interactions own-interactions + 1]]]
     ]
     print interactions
      
    
+  ]
+  
+  ask min-one-of agent [who]
+  [
+    set individual-interactions own-interactions
   ]
 end
      
@@ -298,6 +358,27 @@ to sleep
     ask ? [if age = 1 [ set size 2 ]]
     ask ? [ if age = 6 or energy = 0 [die]]
   ]
+  foreach shelter-list
+  [
+   ask ? [ set label who
+     if num-agents < 10 and day > 500
+     [
+      ask patch-here [ sprout-agent 1] ]
+      ask max-one-of agent [who]
+      [
+        set energy 100
+        set affection 100
+        set pregnant 0
+        set sleeping false
+        set size 1
+        set labour-steps 0
+        set age 0
+        set ask-cuddle 0
+      ]
+   ]
+    
+    ]
+  
     
   end
      
@@ -309,11 +390,7 @@ to mate
         [
           set partner-agent other agent-here
           ask partner-agent [ set partner-energy energy]
-          ask ? [if energy < partner-energy and age > 0[ set pregnant 1 
-              
-             ;;ask ? [ set pregnant 1 
-              set pregnant-bhebix pregnant-bhebix + 1
-              print pregnant-bhebix]]
+          ask ? [if energy < partner-energy and age > 0[ set pregnant 1 ]]
         ]
         ]
       ]
@@ -382,7 +459,7 @@ to initialise-hunt
 end
 
 to hunt 
-  ifelse hunting-season < 1600
+  ifelse hunting-season < 1700
   [
   foreach taikubb-list
   [
@@ -390,7 +467,7 @@ to hunt
       if num-agents > 0
       [
         set nearest-prey min-one-of agent [ distance myself ]
-        ifelse any? turtles in-radius 5 with [ breed = agent ]
+        ifelse any? turtles in-radius 10 with [ breed = agent ]
         [
           face nearest-prey
           fd 1
@@ -427,16 +504,35 @@ to hunt
     if count predator = 0
   [
     set hunting-season 0 
-    ask patches [ set pcolor green ]
+    ifelse day > 500 and nighttime < 210
+    [
+      ask patches [ set pcolor green - 2 ]
+    ]
+    [
+      ask patches [ set pcolor green ]
+    ]
   ]
   ]
-  
-  
   
 end
 
-
-
+to hide 
+  if hunting-season > 1500 and day < 500
+  [
+    foreach bhebix-list
+    [
+      ask ? [ if any? turtles in-radius 5 with [ breed = predator ]
+      [
+        set nearest-predator min-one-of predator [ distance myself ]
+        face nearest-predator
+        rt 180
+        lt random 45 
+        fd 1
+      ]
+      ]
+    ]
+  ]
+end
 
 
 
@@ -512,7 +608,7 @@ AffectionMeter
 AffectionMeter
 1
 5
-5
+3
 0.1
 1
 NIL
@@ -542,7 +638,7 @@ NumberAgents
 NumberAgents
 2
 20
-20
+14
 1
 1
 NIL
@@ -613,6 +709,25 @@ interactions
 17
 1
 11
+
+PLOT
+4
+338
+213
+488
+Individual Interactions
+Ticks
+Interactions
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"Interactions" 1.0 0 -13345367 true "" "plot individual-interactions"
+"Berries" 1.0 0 -2674135 true "" "plot individual-berries"
 
 @#$#@#$#@
 ## WHAT IS IT?
