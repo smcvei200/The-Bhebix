@@ -210,13 +210,26 @@ to search
     ;;search for another agent
     ask ? [if affection < 30 and energy > 30 
               [
+                 
                  set nearest-agent min-one-of other agent [distance myself];;set the value of nearest-agent to the agent smallest distance away
-                 if num-agents > 1 ;; if there are more than 1 agents
+                 
+                 
+                 ifelse any? turtles in-radius 2 with [ breed = agent ] and num-agents > 1
                  [
                    face nearest-agent ;; set heading of current agent towards nearest-agent
-                   fd MovementSpeed   ;; move the current agent forward   
+                   fd MovementSpeed / 2  ;; move the current agent forward   
                    ask nearest-agent [if ask-cuddle = 0 [set ask-cuddle 1]] ;; ask the nearest agent to set its own value of ask-cuddle to one
                  ]
+                 [
+                   if num-agents > 1
+                   [
+                     face nearest-agent ;; set heading of current agent towards nearest-agent
+                     fd MovementSpeed   ;; move the current agent forward   
+                     ask nearest-agent [if ask-cuddle = 0 [set ask-cuddle 1]] ;; ask the nearest agent to set its own value of ask-cuddle to one
+                   ]
+                 ]
+                  
+                
               ]      
           ]
     
@@ -277,7 +290,8 @@ to eat
 to interact
   foreach bhebix-list
   [
-    ask ? [ if any? other turtles-here with [breed = agent][ set affection 100
+    
+    ask ? [ if any? other turtles-here  with [breed = agent][ set affection 100
         set ask-cuddle 0
          ask ? [if any? other agent-here with [affection < 30 ][set interactions interactions + 1
              set own-interactions own-interactions + 1]]]
@@ -533,7 +547,6 @@ to hide
     ]
   ]
 end
-
 
 
 
