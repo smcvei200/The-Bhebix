@@ -52,6 +52,7 @@ agent-own
  ask-cuddle   ;;
  own-interactions ;;
  own-berries ;;
+ pheremone ;;
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -60,6 +61,11 @@ agent-own
 predator-own
 [
   death
+]
+
+shelter-own
+[
+  comfort
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -83,7 +89,7 @@ to setup
   
   ;;set the initial value for corresponding global variables
   set nighttime 0 
-  set num-food 20 
+  set num-food 30 
   set day 0 
   set raining 0
   set rainfall 0
@@ -96,7 +102,8 @@ to setup
   ask n-of num-caves patches with [ not any? turtles in-radius 30 with [breed = shelter]  ][ sprout-shelter 1 ] ;; generate a cave on a random patch as long as there are no other turtles on that patch
   
   
-  ask shelter [ set size 3 ] ;; set size of caves
+  ask shelter [ set size 3 
+                set comfort 0] ;; set size of caves
   ask agent [ set size 2 ;; set initial value of indiviual agent attributes
    set energy 100 
    set affection 100 
@@ -105,7 +112,8 @@ to setup
    set pregnant 0 
    set ask-cuddle 0 
    set own-interactions 0
-   set own-berries 0]
+   set own-berries 0
+   set pheremone 0]
  
 end
 
@@ -123,7 +131,7 @@ to go
    
    ;;set value of num-agents
    set num-agents (count turtles with [breed = agent])
-   
+  ;; ask min-one-of agent [who][ set pheremone 1 ] 
    
   search
   eat
@@ -210,14 +218,18 @@ to search
     ;;search for another agent
     ask ? [if affection < 30 and energy > 30 
               [
-                 
-                 set nearest-agent min-one-of other agent [distance myself];;set the value of nearest-agent to the agent smallest distance away
-                 
-                 
+                 ifelse any? other turtles in-radius 15 with [ breed = agent ] 
+                 [
+                   ;; set nearest-agent min-one-of other agent [distance myself];;set the value of nearest-agent to the agent smallest distance away
+                   set nearest-agent max-one-of other agent in-radius 15 [pheremone]
+                 ]
+                 [
+                   set nearest-agent min-one-of other agent [distance myself] 
+                 ]
                  ifelse any? turtles in-radius 2 with [ breed = agent ] and num-agents > 1
                  [
                    face nearest-agent ;; set heading of current agent towards nearest-agent
-                   fd MovementSpeed / 2  ;; move the current agent forward   
+                   fd MovementSpeed / 2  ;; slow current agent down to prevent overlap and move the current agent forward   
                    ask nearest-agent [if ask-cuddle = 0 [set ask-cuddle 1]] ;; ask the nearest agent to set its own value of ask-cuddle to one
                  ]
                  [
@@ -253,7 +265,8 @@ to search
         ]
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;agent is not sleeping
         [
-              set nearest-cave min-one-of shelter [ distance myself ];;set the value of nearest-cave to the closest shelter
+              ;;set nearest-cave min-one-of shelter [ distance myself ];;set the value of nearest-cave to the closest shelter
+              set nearest-cave max-one-of shelter [ comfort ]
               face nearest-cave ;; set the heading of the current agent towards the closest shelter
               fd MovementSpeed  ;; move the current agent forwards
         ]
@@ -279,10 +292,12 @@ to eat
       ]
     
   ]
-  
-  ask min-one-of agent [who]
+  if num-agents > 0
   [
-    set individual-berries own-berries
+    ask min-one-of agent [who]
+    [
+      set individual-berries own-berries
+    ]
   ]
  end
 
@@ -293,6 +308,7 @@ to interact
     
     ask ? [ if any? other turtles-here  with [breed = agent][ set affection 100
         set ask-cuddle 0
+        set pheremone pheremone + 1
          ask ? [if any? other agent-here with [affection < 30 ][set interactions interactions + 1
              set own-interactions own-interactions + 1]]]
     ]
@@ -301,33 +317,36 @@ to interact
    
   ]
   
-  ask min-one-of agent [who]
+  if num-agents > 0
   [
-    set individual-interactions own-interactions
+    ask min-one-of agent [who]
+    [
+      set individual-interactions own-interactions
+    ]
   ]
 end
      
 to generatefood
   set num-food (count turtles with [breed = food])
-  if num-food < 20 and moisture = 100
+  if num-food < 30 and moisture = 100
   [
-    set newfood (20 - num-food)
+    set newfood (30 - num-food)
     ask n-of newfood patches [sprout-food 1]
   ]
   
   if moisture >= 80
   [
-    if num-food <= 15 [ ask n-of 3 patches [ sprout-food 1 ]] 
+    if num-food <= 25 [ ask n-of 3 patches [ sprout-food 1 ]] 
   ]
   
   if moisture < 80 and moisture >= 60 
   [
-    if num-food <= 10 [ ask n-of 3 patches [ sprout-food 1 ]]
+    if num-food <= 15 [ ask n-of 3 patches [ sprout-food 1 ]]
   ]
   
   if moisture < 60 
   [
-    if num-food < 8 [ ask n-of 3 patches [ sprout-food 1 ]]
+    if num-food < 12 [ ask n-of 3 patches [ sprout-food 1 ]]
   ]
 
 end
@@ -374,7 +393,14 @@ to sleep
   ]
   foreach shelter-list
   [
-   ask ? [ set label who
+   ask ? [ 
+     if day > 500
+     [
+       if any? turtles-here with [ breed = agent ]
+       [
+         set comfort comfort + 1
+       ]
+     ]
      if num-agents < 10 and day > 500
      [
       ask patch-here [ sprout-agent 1] ]
@@ -549,7 +575,6 @@ to hide
 end
 
 
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 205
@@ -565,8 +590,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 -55
 55
@@ -651,7 +676,7 @@ NumberAgents
 NumberAgents
 2
 20
-14
+20
 1
 1
 NIL
