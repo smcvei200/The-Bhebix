@@ -53,6 +53,8 @@ agent-own
  own-interactions ;;
  own-berries ;;
  pheremone ;;
+ point-of-no-return ;;
+ sleeps ;;
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -113,7 +115,9 @@ to setup
    set ask-cuddle 0 
    set own-interactions 0
    set own-berries 0
-   set pheremone 0]
+   set pheremone 0
+   set point-of-no-return 50
+   set sleeps 0]
  
 end
 
@@ -149,7 +153,7 @@ to go
   rain
   sleep
   set bhebix-list [self] of agent
-  if hunting-season = 1500 and raining != 1 and day < 500
+  if hunting-season = 3000 and raining != 1 and day < 500
   [
     initialise-hunt
     ask patches [ set pcolor red ] 
@@ -169,10 +173,12 @@ end
 to search
    foreach bhebix-list  ;; foreach will iterate througe each agent in the list
   [
+    ask ? [ set label point-of-no-return ]
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;if day < 500
     ifelse day < 500  ;; if the value of day is greater than 500 proceed to the else
     [
-      ask ? [ ifelse ask-cuddle >  0
+      ask ? [
+         ifelse ask-cuddle >  0
         [
           
           ask ? [set ask-cuddle ask-cuddle + 1]
@@ -189,7 +195,7 @@ to search
             [
               set nearest-cave min-one-of shelter [ distance myself ] ;;set the value of nearest-cave to the closest shelter
               face nearest-cave  ;; set the heading of the current agent towards nearest cave
-              fd MovementSpeed   ;; move forward 
+              fd 1   ;; move forward 
           ]]
           ;;if current agent has energy less than 30, 
           ;;continue searching for food
@@ -198,7 +204,7 @@ to search
                  set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself] ;; set the value of nearest berry to the closest berry 
                  if any? turtles in-radius 10  with [breed = food ][face nearest-berry]  ;; if there are any berries in a radius of 10 set the heading of the current turtle towards the nearest berry
                  if not any? turtles in-radius 10 with [breed = food][ rt random 90 lt random 90] ;; if no berries in radius 10 randomly change direction
-                 fd MovementSpeed ;; move the current turtle forward 1
+                 fd 1 ;; move the current turtle forward 1
             ]
           ]
         ]
@@ -211,32 +217,32 @@ to search
                  set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself] ;; set the value of nearest berry to the closest berry 
                  if any? turtles in-radius 10  with [breed = food ][face nearest-berry]  ;; if there are any berries in a radius of 10 set the heading of the current turtle towards the nearest berry
                  if not any? turtles in-radius 10 with [breed = food][ rt random 90 lt random 90] ;; if no berries in radius 10 randomly change direction
-                 fd MovementSpeed ;; move the current turtle forward 1
+                 fd 1 ;; move the current turtle forward 1
               ]
           ]
     ;;if current agent has affection less than 30 and energy greater than 30
     ;;search for another agent
     ask ? [if affection < 30 and energy > 30 
               [
-                 ifelse any? other turtles in-radius 15 with [ breed = agent ] 
-                 [
+                 ;;ifelse any? other turtles in-radius 15 with [ breed = agent ] 
+                 ;;[
                    ;; set nearest-agent min-one-of other agent [distance myself];;set the value of nearest-agent to the agent smallest distance away
-                   set nearest-agent max-one-of other agent in-radius 15 [pheremone]
-                 ]
-                 [
+                   ;;set nearest-agent max-one-of other agent in-radius 15 [pheremone]
+                 ;;]
+                 ;;[
                    set nearest-agent min-one-of other agent [distance myself] 
-                 ]
+                 ;;]
                  ifelse any? turtles in-radius 2 with [ breed = agent ] and num-agents > 1
                  [
                    face nearest-agent ;; set heading of current agent towards nearest-agent
-                   fd MovementSpeed / 2  ;; slow current agent down to prevent overlap and move the current agent forward   
+                   fd 1 / 2  ;; slow current agent down to prevent overlap and move the current agent forward   
                    ask nearest-agent [if ask-cuddle = 0 [set ask-cuddle 1]] ;; ask the nearest agent to set its own value of ask-cuddle to one
                  ]
                  [
                    if num-agents > 1
                    [
                      face nearest-agent ;; set heading of current agent towards nearest-agent
-                     fd MovementSpeed   ;; move the current agent forward   
+                     fd 1   ;; move the current agent forward   
                      ask nearest-agent [if ask-cuddle = 0 [set ask-cuddle 1]] ;; ask the nearest agent to set its own value of ask-cuddle to one
                    ]
                  ]
@@ -261,16 +267,33 @@ to search
       ask ? [
         ifelse sleeping;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;agent is sleeping
         [
+          set sleeps 1 ;;
           stop;; stop the current agent
+           
         ]
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;agent is not sleeping
         [
-              ;;set nearest-cave min-one-of shelter [ distance myself ];;set the value of nearest-cave to the closest shelter
-              set nearest-cave max-one-of shelter [ comfort ]
+          ifelse energy <= point-of-no-return
+          [
+              set nearest-cave min-one-of shelter [ distance myself ];;set the value of nearest-cave to the closest shelter
+              ;;set nearest-cave max-one-of shelter [ comfort ]
+              
               face nearest-cave ;; set the heading of the current agent towards the closest shelter
-              fd MovementSpeed  ;; move the current agent forwards
+              fd 1  ;; move the current agent forwards
+          ]
+          [
+                 set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself] ;; set the value of nearest berry to the closest berry 
+                 if any? turtles in-radius 5  with [breed = food ][face nearest-berry]  ;; if there are any berries in a radius of 10 set the heading of the current turtle towards the nearest berry
+                 if not any? turtles in-radius 5 with [breed = food][ rt random 90 lt random 90] ;; if no berries in radius 10 randomly change direction
+                 fd 0.5 ;; move the current turtle forward 1
+          ]
         ]
       ]
+      ask ? [
+             if energy > 0[ set energy(energy - 0.5)]
+             if affection > 0 [ set affection(affection - AffectionMeter)]
+           ]
+      
     ]
   
   ]
@@ -328,25 +351,25 @@ end
      
 to generatefood
   set num-food (count turtles with [breed = food])
-  if num-food < 30 and moisture = 100
+  if num-food < 20 and moisture = 100
   [
-    set newfood (30 - num-food)
+    set newfood (20 - num-food)
     ask n-of newfood patches [sprout-food 1]
   ]
   
   if moisture >= 80
   [
-    if num-food <= 25 [ ask n-of 3 patches [ sprout-food 1 ]] 
+    if num-food <= 15 [ ask n-of 3 patches [ sprout-food 1 ]] 
   ]
   
   if moisture < 80 and moisture >= 60 
   [
-    if num-food <= 15 [ ask n-of 3 patches [ sprout-food 1 ]]
+    if num-food <= 10 [ ask n-of 3 patches [ sprout-food 1 ]]
   ]
   
   if moisture < 60 
   [
-    if num-food < 12 [ ask n-of 3 patches [ sprout-food 1 ]]
+    if num-food < 8 [ ask n-of 3 patches [ sprout-food 1 ]]
   ]
 
 end
@@ -357,9 +380,9 @@ to sunset
     
     ask patches[ if nighttime < 10
       [ set pcolor pcolor - 0.2 ]]
-     ask patches [ if nighttime > 200 and nighttime < 210
+     ask patches [ if nighttime > 300 and nighttime < 310
        [ set pcolor pcolor + 0.2 ]]
-       ask patches [ if nighttime > 210
+       ask patches [ if nighttime > 310
          [ set nighttime 0
            set day 0
            
@@ -382,8 +405,32 @@ to sleep
       ]
       ]
     ]
+    if nighttime = 310
+    [
+      ask ? [ ifelse sleeps > 0
+               [
+                 set point-of-no-return point-of-no-return + IncrementPOR
+                 
+               ]
+               [
+                 set point-of-no-return point-of-no-return - IncrementPOR
+               ]
+               
+               if point-of-no-return > 100
+               [
+                 set point-of-no-return 100
+               ]
+               
+               if point-of-no-return < 10
+               [
+                 set point-of-no-return 10
+               ]
+            ]
+    ]
     if day = 0
     [
+      
+      ask ? [ set sleeps 0 ]
       ask ? [ set sleeping false ]
       ask ? [ set age age + 1 ]
     ]
@@ -414,6 +461,7 @@ to sleep
         set labour-steps 0
         set age 0
         set ask-cuddle 0
+        set point-of-no-return 50
       ]
    ]
     
@@ -444,8 +492,9 @@ to birth
     ask ? [ if pregnant = 1
       [ ifelse labour-steps = 200
         [ 
-          ask patch-here [sprout-agent 1]
-            ask max-one-of turtles-here[who] [
+          hatch 1[
+          ;;ask patch-here [sprout-agent 1]
+          ;;  ask max-one-of turtles-here[who] [
               set energy 100
               set affection 100
               set pregnant 0
@@ -453,8 +502,11 @@ to birth
               set size 1
               set labour-steps 0
               set age 0
-              set ask-cuddle 0] 
-          ask ? [ set pregnant 2
+              set ask-cuddle 0
+              set sleeps 0] 
+          ask ? [ ;;ifelse age > 1
+             set pregnant 2 
+           ;; [ set pregnant 0 ]
             set labour-steps 0 ]
         ]
         [
@@ -499,7 +551,7 @@ to initialise-hunt
 end
 
 to hunt 
-  ifelse hunting-season < 1700
+  ifelse hunting-season < 3100
   [
   foreach taikubb-list
   [
@@ -557,8 +609,7 @@ to hunt
 end
 
 to hide 
-  if hunting-season > 1500 and day < 500
-  [
+  
     foreach bhebix-list
     [
       ask ? [ if any? turtles in-radius 5 with [ breed = predator ]
@@ -571,9 +622,8 @@ to hide
       ]
       ]
     ]
-  ]
+  
 end
-
 
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -647,21 +697,6 @@ AffectionMeter
 1
 5
 3
-0.1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-6
-76
-178
-109
-MovementSpeed
-MovementSpeed
-0.1
-1
-1
 0.1
 1
 NIL
@@ -766,6 +801,21 @@ true
 PENS
 "Interactions" 1.0 0 -13345367 true "" "plot individual-interactions"
 "Berries" 1.0 0 -2674135 true "" "plot individual-berries"
+
+SLIDER
+6
+76
+178
+109
+IncrementPOR
+IncrementPOR
+1
+100
+15
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
