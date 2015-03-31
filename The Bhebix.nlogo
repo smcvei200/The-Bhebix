@@ -27,6 +27,7 @@ globals
   shelter-list
   individual-interactions
   individual-berries
+  initial-go
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -37,6 +38,13 @@ breed [ food berries ]    ;; these are the resources the agents will consume
 breed [ agent bhebix ]    ;; these are the main agents
 breed [ shelter cave ]    ;; will provide the bhebix with shelter
 breed [ predator taikubb ] ;; these are the predators which will hunt the Bhebix
+
+directed-link-breed [ streets street ]
+
+streets-own
+[
+  value-of-relationship ;;
+]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;     Individual Attributes of the Bhebix       ;;;;;
@@ -55,6 +63,9 @@ agent-own
  pheremone ;;
  point-of-no-return ;;
  sleeps ;;
+ fear-of-rain ;;
+ num-links ;;
+ affection-variable ;;
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -98,6 +109,7 @@ to setup
   set moisture 100
   set interactions 0
   set hunting-season 0
+  set initial-go 0
   
   ask n-of num-food patches [ sprout-food 1 ]  ;; randomly generate food on patches 
   ask n-of num-agents patches with [ not any? turtles-here ][ sprout-agent 1 ] ;; generate agent on random patch as long as there is no other turtles
@@ -117,7 +129,8 @@ to setup
    set own-berries 0
    set pheremone 0
    set point-of-no-return 50
-   set sleeps 0]
+   set sleeps 0
+   set num-links 0]
  
 end
 
@@ -136,7 +149,16 @@ to go
    ;;set value of num-agents
    set num-agents (count turtles with [breed = agent])
   ;; ask min-one-of agent [who][ set pheremone 1 ] 
-   
+  
+  if initial-go = 0
+  [
+    foreach bhebix-list
+    [
+      ask ? [ set fear-of-rain random 4 ]
+      ask ? [ set affection-variable random 2 ]
+    ]
+    set initial-go 1
+  ]
   search
   eat
   interact
@@ -173,7 +195,7 @@ end
 to search
    foreach bhebix-list  ;; foreach will iterate througe each agent in the list
   [
-    ask ? [ set label point-of-no-return ]
+    ask ? [ set label affection-variable ];;fear-of-rain ] ;;point-of-no-return ]
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;if day < 500
     ifelse day < 500  ;; if the value of day is greater than 500 proceed to the else
     [
@@ -191,15 +213,49 @@ to search
         [
           ;;if current agent has energy greater than 30, 
           ;;face nearest shelter and move towards it
-          ask ? [ if energy > 30
+          ask ? [ if fear-of-rain = 3
             [
               set nearest-cave min-one-of shelter [ distance myself ] ;;set the value of nearest-cave to the closest shelter
               face nearest-cave  ;; set the heading of the current agent towards nearest cave
               fd 1   ;; move forward 
           ]]
+          
+          ask ? [ if fear-of-rain = 2
+            [
+              ifelse random 4 > 1
+              [
+                  set nearest-cave min-one-of shelter [ distance myself ] ;;set the value of nearest-cave to the closest shelter
+                  face nearest-cave  ;; set the heading of the current agent towards nearest cave
+                  fd 1   ;; move forward 
+              ]
+              [
+                  set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself] ;; set the value of nearest berry to the closest berry 
+                  if any? turtles in-radius 10  with [breed = food ][face nearest-berry]  ;; if there are any berries in a radius of 10 set the heading of the current turtle towards the nearest berry
+                  if not any? turtles in-radius 10 with [breed = food][ rt random 90 lt random 90] ;; if no berries in radius 10 randomly change direction
+                  fd 1 ;; move the current turtle forward 1
+              ]
+            ]
+          ]
+          
+              ask ? [ if fear-of-rain = 1
+            [
+              ifelse random 4 > 0
+              [
+                  set nearest-cave min-one-of shelter [ distance myself ] ;;set the value of nearest-cave to the closest shelter
+                  face nearest-cave  ;; set the heading of the current agent towards nearest cave
+                  fd 1   ;; move forward 
+              ]
+              [
+                  set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself] ;; set the value of nearest berry to the closest berry 
+                  if any? turtles in-radius 10  with [breed = food ][face nearest-berry]  ;; if there are any berries in a radius of 10 set the heading of the current turtle towards the nearest berry
+                  if not any? turtles in-radius 10 with [breed = food][ rt random 90 lt random 90] ;; if no berries in radius 10 randomly change direction
+                  fd 1 ;; move the current turtle forward 1
+              ]
+            ]
+          ]
           ;;if current agent has energy less than 30, 
           ;;continue searching for food
-          ask ? [ if energy < 30 
+          ask ? [ if fear-of-rain = 0 
             [
                  set nearest-berry min-one-of (turtles with [breed = food ] )[distance myself] ;; set the value of nearest berry to the closest berry 
                  if any? turtles in-radius 10  with [breed = food ][face nearest-berry]  ;; if there are any berries in a radius of 10 set the heading of the current turtle towards the nearest berry
@@ -334,6 +390,25 @@ to interact
         set pheremone pheremone + 1
          ask ? [if any? other agent-here with [affection < 30 ][set interactions interactions + 1
              set own-interactions own-interactions + 1]]]
+    
+   ;; ask ? [ if affection-variable < 2 and num-links < 2
+     ;;       [ set nearest-agent min-one-of other agent [ distance myself ]
+              
+       ;;        ifelse out-link-neighbor? nearest-agent
+         ;;       [
+           ;;       set label "yes"
+             ;;     ;;ask out-link-neighbors [set color white]
+               ;; ]
+   ;;             [
+     ;;             create-street-to nearest-agent
+       ;;           ;;ask link-neighbors [set color white]
+         ;;         set num-links num-links + 1 
+           ;;       show  my-in-links
+             ;;     show my-out-links
+               ;; ]
+             ;; ]
+          ;;  ];;
+    
     ]
     print interactions
      
@@ -450,7 +525,7 @@ to sleep
      ]
      if num-agents < 10 and day > 500
      [
-      ask patch-here [ sprout-agent 1] ]
+      ask patch-here [ sprout-agent 1] 
       ask max-one-of agent [who]
       [
         set energy 100
@@ -463,6 +538,7 @@ to sleep
         set ask-cuddle 0
         set point-of-no-return 50
       ]
+     ]
    ]
     
     ]
@@ -503,7 +579,8 @@ to birth
               set labour-steps 0
               set age 0
               set ask-cuddle 0
-              set sleeps 0] 
+              set sleeps 0
+              set num-links 0] 
           ask ? [ ;;ifelse age > 1
              set pregnant 2 
            ;; [ set pregnant 0 ]
@@ -624,7 +701,6 @@ to hide
     ]
   
 end
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 205
