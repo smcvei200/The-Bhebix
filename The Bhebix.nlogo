@@ -155,7 +155,7 @@ to go
     foreach bhebix-list
     [
       ask ? [ set fear-of-rain random 4 ]
-      ask ? [ set affection-variable random 2 ]
+      ask ? [ set affection-variable random 3 ]
     ]
     set initial-go 1
   ]
@@ -195,7 +195,7 @@ end
 to search
    foreach bhebix-list  ;; foreach will iterate througe each agent in the list
   [
-    ask ? [ set label affection-variable ];;fear-of-rain ] ;;point-of-no-return ]
+   ;; ask ? [ set label num-links];;affection-variable ];;fear-of-rain ] ;;point-of-no-return ]
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;if day < 500
     ifelse day < 500  ;; if the value of day is greater than 500 proceed to the else
     [
@@ -280,14 +280,16 @@ to search
     ;;search for another agent
     ask ? [if affection < 30 and energy > 30 
               [
-                 ;;ifelse any? other turtles in-radius 15 with [ breed = agent ] 
-                 ;;[
-                   ;; set nearest-agent min-one-of other agent [distance myself];;set the value of nearest-agent to the agent smallest distance away
-                   ;;set nearest-agent max-one-of other agent in-radius 15 [pheremone]
-                 ;;]
-                 ;;[
-                   set nearest-agent min-one-of other agent [distance myself] 
-                 ;;]
+                ask ? [ifelse any? in-link-neighbors
+                 [
+                   set label "yes"
+                   set nearest-agent min-one-of in-link-neighbors [ distance myself ] 
+                   
+                 ]
+                 [
+                   ;;set nearest-agent min-one-of other agent [distance myself] 
+                     set nearest-agent min-one-of other agent [ distance myself ]
+                 ]
                  ifelse any? turtles in-radius 2 with [ breed = agent ] and num-agents > 1
                  [
                    face nearest-agent ;; set heading of current agent towards nearest-agent
@@ -303,7 +305,7 @@ to search
                    ]
                  ]
                   
-                
+                ] 
               ]      
           ]
     
@@ -391,23 +393,17 @@ to interact
          ask ? [if any? other agent-here with [affection < 30 ][set interactions interactions + 1
              set own-interactions own-interactions + 1]]]
     
-   ;; ask ? [ if affection-variable < 2 and num-links < 2
-     ;;       [ set nearest-agent min-one-of other agent [ distance myself ]
-              
-       ;;        ifelse out-link-neighbor? nearest-agent
-         ;;       [
-           ;;       set label "yes"
-             ;;     ;;ask out-link-neighbors [set color white]
-               ;; ]
-   ;;             [
-     ;;             create-street-to nearest-agent
-       ;;           ;;ask link-neighbors [set color white]
-         ;;         set num-links num-links + 1 
-           ;;       show  my-in-links
-             ;;     show my-out-links
-               ;; ]
-             ;; ]
-          ;;  ];;
+    ask ? [ if affection-variable < 2 and num-links < 2
+      
+      [if any? other turtles-here with [breed = agent]
+            [ set nearest-agent min-one-of other agent [ distance myself ]
+              create-street-to nearest-agent
+              set num-links num-links + 1 
+              show  my-in-links
+              show my-out-links
+            ]
+      ]
+        ]
     
     ]
     print interactions
@@ -772,7 +768,7 @@ AffectionMeter
 AffectionMeter
 1
 5
-3
+5
 0.1
 1
 NIL
