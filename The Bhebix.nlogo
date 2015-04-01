@@ -66,6 +66,10 @@ agent-own
  fear-of-rain ;;
  num-links ;;
  affection-variable ;;
+ buddy1 ;;
+ buddy2 ;;
+ buddy1strength ;;
+ buddy2strength ;;
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -130,7 +134,11 @@ to setup
    set pheremone 0
    set point-of-no-return 50
    set sleeps 0
-   set num-links 0]
+   set num-links 0
+   set buddy1 0
+   set buddy2 0 
+   set buddy1strength 0
+   set buddy2strength 0 ]
  
 end
 
@@ -393,17 +401,31 @@ to interact
          ask ? [if any? other agent-here with [affection < 30 ][set interactions interactions + 1
              set own-interactions own-interactions + 1]]]
     
-    ask ? [ if affection-variable < 2 and num-links < 2
+   ;; ask ? [ if affection-variable < 2 and num-links < 2
       
-      [if any? other turtles-here with [breed = agent]
-            [ set nearest-agent min-one-of other agent [ distance myself ]
-              create-street-to nearest-agent
-              set num-links num-links + 1 
-              show  my-in-links
-              show my-out-links
-            ]
-      ]
-        ]
+   ;;   [if any? other turtles-here with [breed = agent]
+   ;;         [ set nearest-agent min-one-of other agent [ distance myself ]
+   ;;           create-street-to nearest-agent
+   ;;           set num-links num-links + 1 
+   ;;           show  my-in-links
+   ;;          show my-out-links
+   ;;         ]
+   ;;   ]
+   ;;     ]
+   
+   ask ? [ if affection-variable < 2 and num-links < 2
+              [
+                ;;set label who
+                if buddy1 = 0
+                [
+                  if any? other agent-here 
+                  [
+                    set buddy1 [who] of other agent-here 
+                    set label (word buddy1 "+" ?)
+                  ]
+                ]
+              ]
+         ]
     
     ]
     print interactions
@@ -783,7 +805,7 @@ NumberAgents
 NumberAgents
 2
 20
-20
+11
 1
 1
 NIL
