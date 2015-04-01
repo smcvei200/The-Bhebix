@@ -28,6 +28,7 @@ globals
   individual-interactions
   individual-berries
   initial-go
+  ident
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -70,6 +71,7 @@ agent-own
  buddy2 ;;
  buddy1strength ;;
  buddy2strength ;;
+ id ;;
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -114,6 +116,7 @@ to setup
   set interactions 0
   set hunting-season 0
   set initial-go 0
+  set ident 0
   
   ask n-of num-food patches [ sprout-food 1 ]  ;; randomly generate food on patches 
   ask n-of num-agents patches with [ not any? turtles-here ][ sprout-agent 1 ] ;; generate agent on random patch as long as there is no other turtles
@@ -154,6 +157,8 @@ to go
    set taikubb-list [self] of predator
    set shelter-list [self] of shelter
    
+   
+   
    ;;set value of num-agents
    set num-agents (count turtles with [breed = agent])
   ;; ask min-one-of agent [who][ set pheremone 1 ] 
@@ -164,6 +169,8 @@ to go
     [
       ask ? [ set fear-of-rain random 4 ]
       ask ? [ set affection-variable random 3 ]
+      ask ? [ set id ident + 1 ]
+      set ident ident + 1
     ]
     set initial-go 1
   ]
@@ -288,16 +295,19 @@ to search
     ;;search for another agent
     ask ? [if affection < 30 and energy > 30 
               [
-                ask ? [ifelse any? in-link-neighbors
-                 [
-                   set label "yes"
-                   set nearest-agent min-one-of in-link-neighbors [ distance myself ] 
-                   
-                 ]
-                 [
+                ask ? [if buddy1 != 0
+                  [
+                    ;;set nearest-agent min-one-of other turtles [ breed = agent ] and [ id = buddy1 ]
+                    set nearest-agent min-one-of agent with [id = buddy1 ]
+                    
+                      
+                    
+                  ]               
+                 
+                 
                    ;;set nearest-agent min-one-of other agent [distance myself] 
                      set nearest-agent min-one-of other agent [ distance myself ]
-                 ]
+                 
                  ifelse any? turtles in-radius 2 with [ breed = agent ] and num-agents > 1
                  [
                    face nearest-agent ;; set heading of current agent towards nearest-agent
@@ -420,15 +430,28 @@ to interact
                 [
                   if any? other agent-here 
                   [
-                    set buddy1 [who] of other agent-here 
-                    set label (word buddy1 "+" ?)
+                    set buddy1 [id] of other agent-here 
+                    ;;set label (word buddy1 "+" id)
+                  ]
+                ]
+                if buddy1 != 0 and buddy2 = 0
+                [
+                  if any? other agent-here 
+                  [
+                    set buddy2 [id] of other agent-here
+                    ;;set label (word buddy1 "+" buddy2)
+                    if buddy1 = buddy2
+                    [
+                      set buddy2 0
+                    ]
                   ]
                 ]
               ]
+              set label (word buddy1 "+" buddy2)
          ]
     
     ]
-    print interactions
+    print ident
      
    
   ]
@@ -598,11 +621,18 @@ to birth
               set age 0
               set ask-cuddle 0
               set sleeps 0
-              set num-links 0] 
+              set num-links 0
+              set buddy1 0
+              set buddy2 0 
+              set buddy1strength 0
+              set buddy2strength 0
+              set id (ident + 1)] 
           ask ? [ ;;ifelse age > 1
              set pregnant 2 
            ;; [ set pregnant 0 ]
             set labour-steps 0 ]
+          
+          set ident ident + 1
         ]
         [
           ask ? [ set labour-steps labour-steps + 1 ]
