@@ -29,6 +29,7 @@ globals
   individual-berries
   initial-go
   ident
+  target
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -295,23 +296,39 @@ to search
     ;;search for another agent
     ask ? [if affection < 30 and energy > 30 
               [
-                ask ? [if buddy1 != 0
+                ask ? [ifelse buddy1 != 0
                   [
+                    set target buddy1
+                    print target
+                    foreach bhebix-list
+                    [
+                      ask ? [
+                        if id = target
+                        [
+                          set nearest-agent ?
+                          ;;print nearest-agent 
+                        ]
+                      ]
+                    ]
                     ;;set nearest-agent min-one-of other turtles [ breed = agent ] and [ id = buddy1 ]
-                    set nearest-agent min-one-of agent with [id = buddy1 ]
+                    ;;set nearest-agent other agent with [id = buddy1 ]
                     
                       
                     
-                  ]               
+                  ]   
+                  [
+                    set nearest-agent min-one-of other agent [ distance myself ]
+                  ]            
                  
                  
                    ;;set nearest-agent min-one-of other agent [distance myself] 
-                     set nearest-agent min-one-of other agent [ distance myself ]
+                     ;;
                  
+                
                  ifelse any? turtles in-radius 2 with [ breed = agent ] and num-agents > 1
                  [
                    face nearest-agent ;; set heading of current agent towards nearest-agent
-                   fd 1 / 2  ;; slow current agent down to prevent overlap and move the current agent forward   
+                   fd 1   ;; slow current agent down to prevent overlap and move the current agent forward   
                    ask nearest-agent [if ask-cuddle = 0 [set ask-cuddle 1]] ;; ask the nearest agent to set its own value of ask-cuddle to one
                  ]
                  [
@@ -423,7 +440,7 @@ to interact
    ;;   ]
    ;;     ]
    
-   ask ? [ if affection-variable < 2 and num-links < 2
+   ask ? [ if affection-variable < 3 and num-links < 2
               [
                 ;;set label who
                 if buddy1 = 0
@@ -451,7 +468,7 @@ to interact
          ]
     
     ]
-    print ident
+   ;; print ident
      
    
   ]
@@ -820,7 +837,7 @@ AffectionMeter
 AffectionMeter
 1
 5
-5
+3
 0.1
 1
 NIL
