@@ -30,6 +30,12 @@ globals
   initial-go
   ident
   target
+  targeted
+  mylist
+  mycount
+  myaverage
+  mydist
+  
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -118,6 +124,10 @@ to setup
   set hunting-season 0
   set initial-go 0
   set ident 0
+  set mylist []
+  set mycount 0 
+  set myaverage 0
+  set mydist 0
   
   ask n-of num-food patches [ sprout-food 1 ]  ;; randomly generate food on patches 
   ask n-of num-agents patches with [ not any? turtles-here ][ sprout-agent 1 ] ;; generate agent on random patch as long as there is no other turtles
@@ -201,6 +211,9 @@ to go
   hide
   set day day + 1
   set hunting-season hunting-season + 1
+  
+  calc-ave-dist
+  calc-dist-buddy
   
    tick
 end
@@ -298,23 +311,23 @@ to search
               [
                 ask ? [ifelse buddy1 != 0
                   [
-                    set target buddy1
-                    print target
-                    foreach bhebix-list
-                    [
-                      ask ? [
-                        if id = target
-                        [
-                          set nearest-agent ?
-                          ;;print nearest-agent 
-                        ]
-                      ]
-                    ]
+                    ;;set target buddy1
+                    ;;print target
+                   ;; foreach bhebix-list
+                   ;; [
+                   ;;   ask ? [
+                   ;;     if id = target
+                   ;;     [
+                   ;;       set nearest-agent ?
+                   ;;       ;;print nearest-agent 
+                   ;;     ]
+                   ;;   ]
+                   ;; ]
                     ;;set nearest-agent min-one-of other turtles [ breed = agent ] and [ id = buddy1 ]
                     ;;set nearest-agent other agent with [id = buddy1 ]
                     
-                      
-                    
+                   find-nearest-agent buddy1   
+                    ;;print nearest-agent
                   ]   
                   [
                     set nearest-agent min-one-of other agent [ distance myself ]
@@ -392,6 +405,31 @@ to search
   ]
 end
 
+to find-nearest-agent [ targetId ]
+ ;; print targetId
+  foreach bhebix-list
+  [
+    ask ? [ set targeted (word "[" id "]")
+            set targetId (word targetId)]
+    ;;print targeted
+    ask ?
+     [;; print "yes"
+       
+       ifelse targeted = targetId
+       [
+         
+         print id
+        set nearest-agent ?
+       ]
+      [
+        
+       print "no"
+        
+      ]
+    ]
+  ]
+end
+
 to eat
   foreach bhebix-list
   [
@@ -464,7 +502,7 @@ to interact
                   ]
                 ]
               ]
-              set label (word buddy1 "+" buddy2)
+              ;;set label (word buddy1 "+" buddy2)
          ]
     
     ]
@@ -766,6 +804,44 @@ to hide
     ]
   
 end
+
+to calc-ave-dist
+ 
+  
+  ask min-one-of agent [who]
+  [
+    set mylist ([who] of other agent)
+    set mycount length mylist
+    foreach mylist
+    [
+      set myaverage ( myaverage + ( distance turtle ? ))
+    ]
+    
+    ifelse mylist = 0
+    [ set myaverage 0 ]
+    [ set myaverage (myaverage / mycount) ]
+    
+    ;;show myaverage
+  ]
+  
+end
+
+to calc-dist-buddy
+   
+  ask min-one-of agent [id]
+  [
+    if buddy1 != 0
+    [
+      find-nearest-agent buddy1
+      set mydist (distance nearest-agent)
+      ask nearest-agent [ set label "AND ME" ]
+    ]
+    set label "ME"
+  ]
+  
+  show mydist
+  
+end  
 @#$#@#$#@
 GRAPHICS-WINDOW
 205
@@ -837,7 +913,7 @@ AffectionMeter
 AffectionMeter
 1
 5
-3
+1
 0.1
 1
 NIL
@@ -852,7 +928,7 @@ NumberAgents
 NumberAgents
 2
 20
-11
+20
 1
 1
 NIL
@@ -896,10 +972,10 @@ count turtles with [breed = food]
 11
 
 PLOT
-6
-218
-166
-338
+5
+212
+165
+332
 Agents Population
 ticks
 NumAgents
@@ -918,17 +994,17 @@ MONITOR
 174
 198
 219
-Interactions
-interactions
+High AV
+count agent with [affection-variable > 2]
 17
 1
 11
 
 PLOT
 4
-338
+326
 213
-488
+446
 Individual Interactions
 Ticks
 Interactions
@@ -957,6 +1033,25 @@ IncrementPOR
 1
 NIL
 HORIZONTAL
+
+PLOT
+4
+362
+204
+512
+Distances
+ticks
+Distance
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"average" 1.0 0 -8630108 true "" "plot myaverage"
+"buddy1" 1.0 0 -955883 true "" "plot mydist"
 
 @#$#@#$#@
 ## WHAT IS IT?
