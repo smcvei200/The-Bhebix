@@ -35,6 +35,8 @@ globals
   mycount
   myaverage
   mydist
+  dangerous
+  still-alive
   
 ]
 
@@ -179,7 +181,8 @@ to go
     foreach bhebix-list
     [
       ask ? [ set fear-of-rain random 4 ]
-      ask ? [ set affection-variable random 3 ]
+      ask ? [ set affection-variable random 3 
+        set label affection-variable]
       ask ? [ set id ident + 1 ]
       set ident ident + 1
     ]
@@ -201,7 +204,7 @@ to go
   rain
   sleep
   set bhebix-list [self] of agent
-  if hunting-season = 3000 and raining != 1 and day < 500
+  if hunting-season = 1000 and raining != 1 and day < 500
   [
     initialise-hunt
     ask patches [ set pcolor red ] 
@@ -214,6 +217,9 @@ to go
   
   calc-ave-dist
   calc-dist-buddy
+  
+  set bhebix-list [self] of agent
+  ;;check-if-buddy-alive
   
    tick
 end
@@ -340,9 +346,12 @@ to search
                 
                  ifelse any? turtles in-radius 2 with [ breed = agent ] and num-agents > 1
                  [
-                   face nearest-agent ;; set heading of current agent towards nearest-agent
-                   fd 1   ;; slow current agent down to prevent overlap and move the current agent forward   
-                   ask nearest-agent [if ask-cuddle = 0 [set ask-cuddle 1]] ;; ask the nearest agent to set its own value of ask-cuddle to one
+                   if nearest-agent != nobody
+                   [
+                      face nearest-agent ;; set heading of current agent towards nearest-agent
+                      fd 1   ;; slow current agent down to prevent overlap and move the current agent forward   
+                      ask nearest-agent [if ask-cuddle = 0 [set ask-cuddle 1]] ;; ask the nearest agent to set its own value of ask-cuddle to one
+                   ]
                  ]
                  [
                    if num-agents > 1
@@ -478,7 +487,7 @@ to interact
    ;;   ]
    ;;     ]
    
-   ask ? [ if affection-variable < 3 and num-links < 2
+   ask ? [ if affection-variable = 2; and num-links < 2
               [
                 ;;set label who
                 if buddy1 = 0
@@ -731,18 +740,34 @@ to initialise-hunt
 end
 
 to hunt 
-  ifelse hunting-season < 3100
+  ifelse hunting-season < 1200
   [
   foreach taikubb-list
   [
+    set dangerous 0
     ask ? [ 
       if num-agents > 0
       [
         set nearest-prey min-one-of agent [ distance myself ]
         ifelse any? turtles in-radius 10 with [ breed = agent ]
         [
-          face nearest-prey
-          fd 1
+          ask nearest-prey [ if any? other agent-here
+            [
+              set dangerous 1
+            ]
+          ]
+          
+          ask ? [ ifelse dangerous = 1
+            [
+              face nearest-prey 
+              rt 180
+              fd 2
+            ]
+            [
+              face nearest-prey
+              fd 1
+            ]
+          ]
         ]
         [
           rt random 90 lt random 90 
@@ -792,7 +817,20 @@ to hide
   
     foreach bhebix-list
     [
-      ask ? [ if any? turtles in-radius 5 with [ breed = predator ]
+      ask ? [ if any? other agent-here with [ affection-variable = 2 ]
+        [
+          stop
+        ]
+      ]
+       ask ? [ if any? turtles in-radius 10 with [ breed = predator ][
+      ask ? [ ifelse buddy1 != 0[
+        find-nearest-agent buddy1
+         face nearest-agent ;; set heading of current agent towards nearest-agent
+         fd 1   ;; move the current agent forward   
+         ask nearest-agent [if ask-cuddle = 0 [set ask-cuddle 1]]]
+       ;; ask the nearest agent to set its own value of ask-cuddle to one
+        
+     ;; ask ? [ if any? turtles in-radius 5 with [ breed = predator ]
       [
         set nearest-predator min-one-of predator [ distance myself ]
         face nearest-predator
@@ -802,13 +840,15 @@ to hide
       ]
       ]
     ]
+       ]
+    ]
   
 end
 
 to calc-ave-dist
  
   
-  ask min-one-of agent [who]
+  ask min-one-of agent [id]
   [
     set mylist ([who] of other agent)
     set mycount length mylist
@@ -827,21 +867,53 @@ to calc-ave-dist
 end
 
 to calc-dist-buddy
-   
+  
   ask min-one-of agent [id]
   [
+    set affection-variable 2
     if buddy1 != 0
     [
       find-nearest-agent buddy1
-      set mydist (distance nearest-agent)
-      ask nearest-agent [ set label "AND ME" ]
+      ifelse nearest-agent != nobody
+      [
+        set mydist (distance nearest-agent)
+        ;;ask nearest-agent [ set label "AND ME" ]
+      ]
+      [
+        set buddy1 0
+      ]
     ]
-    set label "ME"
+    ;;set label "ME"
   ]
   
   show mydist
   
 end  
+
+to check-if-buddy-alive
+  
+  foreach bhebix-list
+  [
+    set still-alive 0
+    ask ? [ if buddy1 != 0
+      [
+        foreach bhebix-list
+        [
+          ask ? [ if id = buddy1
+            [
+              set still-alive 1
+            ]
+          ]
+        ]
+        
+        if still-alive != 1
+        [
+          set buddy1 0
+        ]
+      ]
+    ]
+  ]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 205
@@ -913,7 +985,7 @@ AffectionMeter
 AffectionMeter
 1
 5
-1
+5
 0.1
 1
 NIL
@@ -995,7 +1067,7 @@ MONITOR
 198
 219
 High AV
-count agent with [affection-variable > 2]
+count agent with [affection-variable = 2]
 17
 1
 11
