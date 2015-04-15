@@ -37,7 +37,7 @@ globals
   mydist
   dangerous
   still-alive
-  
+  eaten
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -130,6 +130,7 @@ to setup
   set mycount 0 
   set myaverage 0
   set mydist 0
+  set eaten 0
   
   ask n-of num-food patches [ sprout-food 1 ]  ;; randomly generate food on patches 
   ask n-of num-agents patches with [ not any? turtles-here ][ sprout-agent 1 ] ;; generate agent on random patch as long as there is no other turtles
@@ -204,7 +205,7 @@ to go
   rain
   sleep
   set bhebix-list [self] of agent
-  if hunting-season = 1000 and raining != 1 and day < 500
+  if hunting-season = 1000 ;;and raining != 1 and day < 500
   [
     initialise-hunt
     ask patches [ set pcolor red ] 
@@ -315,34 +316,20 @@ to search
     ;;search for another agent
     ask ? [if affection < 30 and energy > 30 
               [
+                ;;check if agent has formed a relationship
                 ask ? [ifelse buddy1 != 0
                   [
-                    ;;set target buddy1
-                    ;;print target
-                   ;; foreach bhebix-list
-                   ;; [
-                   ;;   ask ? [
-                   ;;     if id = target
-                   ;;     [
-                   ;;       set nearest-agent ?
-                   ;;       ;;print nearest-agent 
-                   ;;     ]
-                   ;;   ]
-                   ;; ]
-                    ;;set nearest-agent min-one-of other turtles [ breed = agent ] and [ id = buddy1 ]
-                    ;;set nearest-agent other agent with [id = buddy1 ]
-                    
+                   
+                    ;; call function to identify agent with id equivalent to value of buddy1
                    find-nearest-agent buddy1   
-                    ;;print nearest-agent
+                   
                   ]   
                   [
+                    ;; if no relationship exists taregt nearest agent
                     set nearest-agent min-one-of other agent [ distance myself ]
                   ]            
                  
-                 
-                   ;;set nearest-agent min-one-of other agent [distance myself] 
-                     ;;
-                 
+                            
                 
                  ifelse any? turtles in-radius 2 with [ breed = agent ] and num-agents > 1
                  [
@@ -405,6 +392,8 @@ to search
         ]
       ]
       ask ? [
+        
+              ;;reduce agent's energy and affection levels
              if energy > 0[ set energy(energy - 0.5)]
              if affection > 0 [ set affection(affection - AffectionMeter)]
            ]
@@ -414,47 +403,61 @@ to search
   ]
 end
 
+;;procedure used to identify the agent with a specified id number
 to find-nearest-agent [ targetId ]
- ;; print targetId
+
+  ;;foreach loop to cycle through each agent in the list
   foreach bhebix-list
   [
+    ;; change the format of the id and targetid so they are the same
     ask ? [ set targeted (word "[" id "]")
             set targetId (word targetId)]
-    ;;print targeted
+    
     ask ?
-     [;; print "yes"
-       
+     [
+       ;; if id of the current agent matches target value
        ifelse targeted = targetId
        [
          
-         print id
+       ;; set the value of nearest-agent to the current agent
         set nearest-agent ?
        ]
       [
         
-       print "no"
+      ;; if the id does not match the current agent, do nothing
         
       ]
     ]
   ]
 end
 
+;;procedure used to instruct agents how to eat
 to eat
+  
+  ;;foreach loop to cycle through each agent in the list
   foreach bhebix-list
   [
+    ;;ask the current turtle in the list to check if a food resource is at the current location
+    ;;if there is, add 50 to the agents energy
     ask ? [ if any? turtles-here with [breed = food] [ set energy (energy + 50)
                                                        set own-berries own-berries + 1 ]
+    
+            ;; if adding 50 causes the agent's energy to exceed 100, reset energy to 100
             if energy > 100 [ set energy 100]]
    
   ]
+  ;;foreach loop to cycle through each berry in the list
   foreach berry-list
   [
+    ;; ask the current berry if an agent is at the same location
+    ;;if this is true, instruct the berry to die and reduce the value of num-food
     ask ? [ if any? turtles-here with [breed = agent][die]
             set num-food (num-food - 1)
       
       ]
     
   ]
+  ;; if there is more than one agent, ask the agent with the smallest who number to set the value of individual-berries
   if num-agents > 0
   [
     ask min-one-of agent [who]
@@ -464,199 +467,219 @@ to eat
   ]
  end
 
-
+;;procedure used to instruct agents on how to interact
 to interact
+  ;;foreach loop used to cycle through each agent in the list
   foreach bhebix-list
   [
-    
+    ;;ask the current agent if another agent is at the same location
+    ;;if this is true, set the current agent's affection to 100
     ask ? [ if any? other turtles-here  with [breed = agent][ set affection 100
         set ask-cuddle 0
-        set pheremone pheremone + 1
+        ;;ask the current agent if another agent is present with an affection level lower than 30,
+        ;;if this is true increment the value of interactions and set the value of own-interactions
          ask ? [if any? other agent-here with [affection < 30 ][set interactions interactions + 1
              set own-interactions own-interactions + 1]]]
-    
-   ;; ask ? [ if affection-variable < 2 and num-links < 2
-      
-   ;;   [if any? other turtles-here with [breed = agent]
-   ;;         [ set nearest-agent min-one-of other agent [ distance myself ]
-   ;;           create-street-to nearest-agent
-   ;;           set num-links num-links + 1 
-   ;;           show  my-in-links
-   ;;          show my-out-links
-   ;;         ]
-   ;;   ]
-   ;;     ]
-   
-   ask ? [ if affection-variable = 2; and num-links < 2
+
+   ;;ask the current agent if they have an affection-variable value of 2
+   ask ? [ if affection-variable = 2
               [
-                ;;set label who
+                ;;if the current agent's value of buddy1 equals zero
                 if buddy1 = 0
                 [
+                  ;;and there is another agent at the current location
                   if any? other agent-here 
                   [
+                    ;;set the value of buddy1 to the id of the other agent
+                    ;;this will effectively form the relationship
                     set buddy1 [id] of other agent-here 
-                    ;;set label (word buddy1 "+" id)
+                    
                   ]
-                ]
-                if buddy1 != 0 and buddy2 = 0
-                [
-                  if any? other agent-here 
-                  [
-                    set buddy2 [id] of other agent-here
-                    ;;set label (word buddy1 "+" buddy2)
-                    if buddy1 = buddy2
-                    [
-                      set buddy2 0
-                    ]
-                  ]
-                ]
-              ]
-              ;;set label (word buddy1 "+" buddy2)
-         ]
-    
-    ]
-   ;; print ident
-     
-   
+                ]               
+              ]             
+          ]
+        ] 
   ]
   
+  ;;if there is at least one agent alive
   if num-agents > 0
   [
+    ;;ask the agent with the smallest who number to set the value of individual-interactions
+    ;;equal to the value of own-interactions
     ask min-one-of agent [who]
     [
       set individual-interactions own-interactions
     ]
   ]
 end
-     
+ 
+;;procedure used to generate food resources    
 to generatefood
+  ;;set the value of num-food to the current number of food resources
   set num-food (count turtles with [breed = food])
+  ;; if there are less than 20 food resources available
+  ;; and the moisture is at 100
   if num-food < 20 and moisture = 100
   [
+    ;;calculate the number of food consumed and regenrate this number on random patches
     set newfood (20 - num-food)
     ask n-of newfood patches [sprout-food 1]
   ]
   
+  ;;if the moisture level is greater than or equal to 80
   if moisture >= 80
   [
+    ;;if the number of food resources is 15 or less, regenerate 3 additional food objects
     if num-food <= 15 [ ask n-of 3 patches [ sprout-food 1 ]] 
   ]
   
+  ;;if the moisture level is between 60 and 80
   if moisture < 80 and moisture >= 60 
   [
+    ;;if the number of food resources is 10 or less, regenerate 3 additional food objects
     if num-food <= 10 [ ask n-of 3 patches [ sprout-food 1 ]]
   ]
   
+  ;;if the moisture level is less than 60
   if moisture < 60 
   [
+    ;;if the number of food resources is less than 8, regenerate 3 additional food objects
     if num-food < 8 [ ask n-of 3 patches [ sprout-food 1 ]]
   ]
 
 end
 
+;;procedure used to represent the sunset
 to sunset
+  ;;if the value of day is greater than 500
   if day > 500 
   [
-    
+    ;;at the end of the day make the colour of the patches gradually get darker
+    ;;until the value of nighttime reaches 10
     ask patches[ if nighttime < 10
       [ set pcolor pcolor - 0.2 ]]
+    
+    ;;once the value of nighttime reaches 300
+    ;;make the colour of the patches get lighter until nighttime reaches 310
      ask patches [ if nighttime > 300 and nighttime < 310
        [ set pcolor pcolor + 0.2 ]]
+     
+     ;;once the value of nighttime gets higher than 310
+     ;;reset the values of day and nighttime back to zero
        ask patches [ if nighttime > 310
          [ set nighttime 0
            set day 0
            
          ]]
+       
+       ;;increment the value of nighttime and moisture while the value of day is greater than 500
        set nighttime nighttime + 1
        set moisture moisture + 10
        
     ]
 end
 
+;;procedure used to control agent's attributes after sleeping
 to sleep
+  ;;foreach loop to cycle through each agent in the list
   foreach bhebix-list
   [
+    ;;if the value of day is greater than 500
     if day > 500
     [
+      ;;ask the current turtle if they are in a shelter
       ask ? [ if any? turtles-here with [ breed = shelter][
+          ;;if agent is in shelter set the value of attributes as appropriate
         set sleeping true
         set energy 100
         set affection 100
       ]
       ]
     ]
+    
+    ;;at the end of the night
     if nighttime = 310
     [
+      ;;ask the current agent if the value of sleeps is greater than 0
+      ;;if the agent has slept
+      ;;this is effectively how the agents learn what action to take at night
       ask ? [ ifelse sleeps > 0
                [
-                 set point-of-no-return point-of-no-return + IncrementPOR
-                 
+                 ;; increment the value of point-of-no-return
+                 set point-of-no-return point-of-no-return + IncrementPOR                 
                ]
                [
+                 ;;decrement the value of point-of-no-return 
                  set point-of-no-return point-of-no-return - IncrementPOR
                ]
                
+               ;;ensure the value of point-of-no-return does not exceed 100
                if point-of-no-return > 100
                [
                  set point-of-no-return 100
                ]
                
+               ;;ensure the value of point-of-no-return does not drop below 10
                if point-of-no-return < 10
                [
                  set point-of-no-return 10
                ]
             ]
     ]
+    
+    ;;at the start of each day
     if day = 0
     [
-      
+      ;;ask each agent to set reset appropriate attributes and increment their age
       ask ? [ set sleeps 0 ]
       ask ? [ set sleeping false ]
       ask ? [ set age age + 1 ]
     ]
     
+    ;;if an agent has reached the age of 1, increase their size
     ask ? [if age = 1 [ set size 2 ]]
+    ;;if an agent has reached the age of 6, agent will die
     ask ? [ if age = 6 or energy = 0 [die]]
   ]
+  
+  ;;foreach loop to cycle through each shelter in the list
   foreach shelter-list
   [
    ask ? [ 
+     ;;if the value of day is greater than 500
+     ;;or it is night
      if day > 500
      [
+       ;;if an agent sleeps in the current cave
        if any? turtles-here with [ breed = agent ]
        [
+         ;;increment the current cave's vale of comfort
          set comfort comfort + 1
        ]
+     ]   
      ]
-     if num-agents < 10 and day > 500
-     [
-      ask patch-here [ sprout-agent 1] 
-      ask max-one-of agent [who]
-      [
-        set energy 100
-        set affection 100
-        set pregnant 0
-        set sleeping false
-        set size 1
-        set labour-steps 0
-        set age 0
-        set ask-cuddle 0
-        set point-of-no-return 50
-      ]
-     ]
-   ]
-    
     ]
-  
-    
-  end
-     
+end
+
+;;procedure used to instruct agents on reproduction     
 to mate
+  
+  ;;foreach loop to cycle through each agent in the list
   foreach bhebix-list
   [
+    ;;ask the current agent if their energy and affection are greater than 80
+    ;;if they are currently not pregnant and have not been pregnant
+    ;;if they are older than 0 and it is not first thing in the morning
     ask ? [ if energy > 80 and affection > 80 and pregnant = 0 and age > 0 and day > 20
+      
+      ;;if there are any other agents at the same location with energy and affection levels greater than 50
+      ;;they are not pregnant and older than 0
+      ;;and it is not nighttime
       [ if any? other agent-here with [ energy > 50 and affection > 50 and pregnant != 1  and age > 0 and day < 500 ]
         [
+          ;;when all these conditions are met
+          ;;and the current agent has a greater energy value than the other agent at this location
+          ;; the agent will become pregnant
           set partner-agent other agent-here
           ask partner-agent [ set partner-energy energy]
           ask ? [if energy < partner-energy and age > 0[ set pregnant 1 ]]
@@ -667,15 +690,22 @@ to mate
   
   end
 
+;;procedure to instruct agents on giving birth
 to birth
+  
+  ;;foreach loop to cycle through each agent in the list
   foreach bhebix-list
   [
+    ;;if the current agent is pregnant
     ask ? [ if pregnant = 1
+      ;;and they have been pregnant for 200 labour-steps
       [ ifelse labour-steps = 200
         [ 
+          ;;hatch a new agent
           hatch 1[
-          ;;ask patch-here [sprout-agent 1]
-          ;;  ask max-one-of turtles-here[who] [
+         ;;set the value of the new agent's attributes
+         ;;do not set the value of point-of-no-return as this will be taken from the parent agent
+         ;;as will the fear-of-rain attribute
               set energy 100
               set affection 100
               set pregnant 0
@@ -691,14 +721,16 @@ to birth
               set buddy1strength 0
               set buddy2strength 0
               set id (ident + 1)] 
-          ask ? [ ;;ifelse age > 1
-             set pregnant 2 
-           ;; [ set pregnant 0 ]
-            set labour-steps 0 ]
+         
+         ;;set the value of pregnant to 2, this will ensure the agent cannot become pregnant again
+         ;;reset the value of labour-steps
+          ask ? [set pregnant 2 
+                 set labour-steps 0 ]
           
-          set ident ident + 1
+          ;;set ident ident + 1
         ]
         [
+          ;;increment the value of labour-steps if it has not yet reacched 200
           ask ? [ set labour-steps labour-steps + 1 ]
         ]
       ]
@@ -708,20 +740,26 @@ to birth
             
 end
   
-
+;;procedure used for the rain effect
 to rain
+  ;;if the value of rain equals 1
   if raining = 1
   [
+    ;;set the colour of the patches to green 
     ask patches [ set pcolor green ]
    
+   ;;ask 75 random patches to change colour to blue
     ask n-of 75 patches [ set pcolor blue + 1 ]
-      ;;ask n-of 50 patches [ set pcolor green ]
+    ;;increment the value of rainfall
+    ;;this will be used as a timer to determine when the rain should stop
     set rainfall rainfall + 1
     
   ]
   
+  ;;once the value of rainfall reaches 100
   if rainfall = 100
   [
+    ;;increment the value of moisture and reset the colour of the patches to green 
     if moisture < 100 [ set moisture moisture + 40 ]
     if moisture > 100 [ set moisture 100 ]
     set raining 0
@@ -730,60 +768,92 @@ to rain
   ]
 end
 
+;;procedure used to setup the predators attributes and locations
 to initialise-hunt
+  ;;create a predator at the top left
   ask patches with [ pxcor = -50 and pycor = 20 ][ sprout-predator 1 ]
+  
+  ;;create a predator at the bottom left
   ask patches with [ pxcor = -50 and pycor = -20 ][ sprout-predator 1 ] 
+  
+  ;; create a predator at the top right
   ask patches with [ pxcor = 50 and pycor = 20 ][ sprout-predator 1 ]
+  
+  ;;create a predator at the bottom right
   ask patches with [ pxcor = 50 and pycor = -20 ][ sprout-predator 1 ]
+  
+  ;;set the predators attributes
   ask predator [ set size 3 
                  set death 0]
 end
 
+;;procedure to instruct predators during hunting season
 to hunt 
+  
+  ;;if the value of hunting season is less than 1200
   ifelse hunting-season < 1200
   [
+    ;;foreach loop to cycle through each predator in the list
   foreach taikubb-list
   [
+    ;;set the value of dangerous to 0
     set dangerous 0
     ask ? [ 
+      ;;if there are agents alive
       if num-agents > 0
       [
+        ;;set the value of nearest-prey to the closest agent
         set nearest-prey min-one-of agent [ distance myself ]
+        ;;if an agent is within a radius of 10
         ifelse any? turtles in-radius 10 with [ breed = agent ]
         [
+          ;;ask the nearest-agent if there are any other agents at the same location
           ask nearest-prey [ if any? other agent-here
             [
+              ;;if there are other agents present, set the value of dangerous to 1
               set dangerous 1
             ]
           ]
           
-          ask ? [ ifelse dangerous = 1
+          ;;if there is more than one agent on the target location and it is within a distance of 5
+          ask ? [ ifelse dangerous = 1 and distance nearest-prey < 5
             [
+              ;;move away from the target agent
               face nearest-prey 
               rt 180
               fd 2
             ]
             [
+              ;;if there is only one agent advance towards it
               face nearest-prey
               fd 1
             ]
           ]
         ]
         [
+          ;;if there are no agents in sight, randomly move around
           rt random 90 lt random 90 
           fd 1
         ]
       ]       
     ]
   ]
+  ;;foreach loop to cycle through each agent in the list
   foreach bhebix-list 
   [
-    ask ? [ if any? turtles-here with [ breed = predator][ die ] ]
+    ;;if there are any predators on the same location as the current agent
+    ;;increment the value of eaten and ask the current agent to die
+    ask ? [ if any? turtles-here with [ breed = predator][  set eaten eaten + 1
+        die       
+         ] ]
   ]
   ]
+  ;;at the end of the hunting season
   [
+    ;;foreach loop to cycle through each predator in the list
     foreach taikubb-list
     [
+      ;;ask the predators to move towards the nearest corner
       ask ? [ if xcor <= 0 and ycor <= 0 [ facexy -55 -23
                                            fd 1 ] ]
       ask ? [ if xcor <= 0 and ycor > 0 [ facexy -55 23
@@ -792,6 +862,7 @@ to hunt
                                            fd 1 ] ]
       ask ? [ if xcor > 0 and ycor > 0 [ facexy 55 23
                                            fd 1 ] ]
+      ;;ask the predators to die when the corner is reached
       ask ? [ if xcor < -50 and ycor < -20 [ set death 1 ] ]
       ask ? [ if xcor < -50 and ycor > 20  [ set death 1 ] ]
       ask ? [ if xcor >  50 and ycor < -20 [ set death 1 ] ]
@@ -800,12 +871,16 @@ to hunt
     ask predator [ if death > 0 [ die ] ]
     if count predator = 0
   [
+    ;;reset the value of hunting season 
     set hunting-season 0 
+    ;;if it is night
     ifelse day > 500 and nighttime < 210
     [
+      ;;set the colour of the patches to a dark green
       ask patches [ set pcolor green - 2 ]
     ]
     [
+      ;;if it is day set the colour of the patches back to the original green
       ask patches [ set pcolor green ]
     ]
   ]
@@ -813,25 +888,25 @@ to hunt
   
 end
 
+;;procedure to instruct agents on how to proceed in the presence of a predator
 to hide 
   
+  ;;foreach loop to cycle through each of the agents in the list
     foreach bhebix-list
     [
-      ask ? [ if any? other agent-here with [ affection-variable = 2 ]
-        [
-          stop
-        ]
-      ]
+     ;;check if a predator is within a radius of 10
        ask ? [ if any? turtles in-radius 10 with [ breed = predator ][
+      ;;if the current agent has a buddy
       ask ? [ ifelse buddy1 != 0[
+          ;;find the current agent's buddy
         find-nearest-agent buddy1
          face nearest-agent ;; set heading of current agent towards nearest-agent
          fd 1   ;; move the current agent forward   
          ask nearest-agent [if ask-cuddle = 0 [set ask-cuddle 1]]]
-       ;; ask the nearest agent to set its own value of ask-cuddle to one
-        
-     ;; ask ? [ if any? turtles in-radius 5 with [ breed = predator ]
+       
       [
+        ;; if the current agent does not have a buddy
+        ;; run away
         set nearest-predator min-one-of predator [ distance myself ]
         face nearest-predator
         rt 180
@@ -845,13 +920,18 @@ to hide
   
 end
 
+;;procedure to calculate the average distance from all other agents
 to calc-ave-dist
  
-  
+  ;; ask the agent with the smallest id
   ask min-one-of agent [id]
   [
+    ;;populate a list with all agents
     set mylist ([who] of other agent)
+    ;;count the number of agents in the list
     set mycount length mylist
+    
+    ;;calculate the average distance from all other turtles and set the value of myaverage
     foreach mylist
     [
       set myaverage ( myaverage + ( distance turtle ? ))
@@ -861,44 +941,52 @@ to calc-ave-dist
     [ set myaverage 0 ]
     [ set myaverage (myaverage / mycount) ]
     
-    ;;show myaverage
   ]
   
 end
 
+;;procedure to calculate the distance from the agents buddy
 to calc-dist-buddy
   
+  ;;ask the agent with the lowest id
   ask min-one-of agent [id]
   [
+    ;;set the value of this agents affection-variable to 2
     set affection-variable 2
+    
+    ;;check if the agent has a buddy
     if buddy1 != 0
     [
+      ;;find the agents buddy
       find-nearest-agent buddy1
       ifelse nearest-agent != nobody
       [
+        ;;set the value of mydist to the distance between the current agent and its buddy
         set mydist (distance nearest-agent)
-        ;;ask nearest-agent [ set label "AND ME" ]
       ]
       [
         set buddy1 0
       ]
     ]
-    ;;set label "ME"
   ]
-  
-  show mydist
-  
 end  
 
+
+;;procedure to check if an agents buddy is still alive
 to check-if-buddy-alive
   
+  ;;foreach loop to cycle through each agent in the list
   foreach bhebix-list
   [
+    ;;set the value of still-alive to zero
     set still-alive 0
+    ;;ask the current agent if it has a buddy
     ask ? [ if buddy1 != 0
       [
+        ;;check each of the other agents to see if their id matches the value of the current agents buddy number
         foreach bhebix-list
         [
+          ;;if the agent does have a matching value, set the value of still-alive to 1
           ask ? [ if id = buddy1
             [
               set still-alive 1
@@ -906,6 +994,7 @@ to check-if-buddy-alive
           ]
         ]
         
+        ;;if no agent has a matching value reset the current agent's value of buddy1 to zero
         if still-alive != 1
         [
           set buddy1 0
@@ -1124,6 +1213,17 @@ true
 PENS
 "average" 1.0 0 -8630108 true "" "plot myaverage"
 "buddy1" 1.0 0 -955883 true "" "plot mydist"
+
+MONITOR
+173
+230
+230
+275
+Low AV
+count agent with [affection-variable < 2 ]
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
